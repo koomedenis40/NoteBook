@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "872108304624",
+    "project_id": "myfirst-noteapp-dev",
+    "storage_bucket": "myfirst-noteapp-dev.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:872108304624:android:a6dfda43598e4a45a5ba35",
+        "android_client_info": {
+          "package_name": "com.denisk.mynotes"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAET-cAz8nTeS6n0p2c5HZabkpXdCz9rik"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
