@@ -5,7 +5,6 @@ import 'package:mynotes/firebase_options.dart';
 import 'package:mynotes/views/login_view.dart';
 import 'package:mynotes/views/register_view.dart';
 import 'package:mynotes/views/verify_email.dart';
-import 'dart:developer' as devtools;
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,6 +18,7 @@ void main() {
       routes: {
         '/login/': (context) => const LoginView(),
         '/register': (context) => const RegisterView(),
+        '/notes/' : (context) => const NotesView(),
       },
     ),
   );
@@ -120,5 +120,5 @@ Future<bool> showLogOutDialog(BuildContext context) {
         ],
       );
     },
-  ).then((value) => null ?? false);
+  ).then((value) => false);
 }
