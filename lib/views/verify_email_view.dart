@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mynotes/extensions/buildcontext/loc.dart';
 import 'package:mynotes/services/auth/bloc/auth_bloc.dart';
 import 'package:mynotes/services/auth/bloc/auth_event.dart';
 
@@ -13,28 +14,38 @@ class VerifyEmailView extends StatefulWidget {
 class _VerifyEmailViewState extends State<VerifyEmailView> {
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        const Text(
-            "We have sent you an email verification. Please check your mail to verify your acount"),
-        const Text(
-            "If you have not received a verification email yet, press the button below"),
-        TextButton(
-          onPressed: () {
-            context.read<AuthBloc>().add(
-                  const AuthEventSendEmailVerification(),
-                );
-          },
-          child: const Text('Send Email Verification'),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(context.loc.verify_email),
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            const Text(
+                "We have sent you an email verification. Please check your mail to verify your acount"),
+            const Text(
+                "If you have not received a verification email yet, press the button below"),
+            TextButton(
+              onPressed: () {
+                context.read<AuthBloc>().add(
+                      const AuthEventSendEmailVerification(),
+                    );
+              },
+              child: const Text('Send Email Verification'),
+            ),
+            TextButton(
+              onPressed: () async {
+                context.read<AuthBloc>().add(
+                      const AuthEventLogOut(),
+                    );
+              },
+              child: const Text(
+                'Restart',
+              ),
+            )
+          ],
         ),
-        TextButton(
-            onPressed: () async {
-              context.read<AuthBloc>().add(
-                    const AuthEventLogOut(),
-                  );
-            },
-            child: const Text('Restart'))
-      ],
+      ),
     );
   }
 }
