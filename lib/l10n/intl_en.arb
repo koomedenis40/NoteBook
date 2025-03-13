@@ -10,6 +10,9 @@
     "verify_email": "Verify Email",
     "register": "Register",
     "restart": "Restart",
+    "login_header": "Hello there, Welcome Back!",
+    "login_message": "Login to Continue",
+    "sign_in_with": "Or Log In With",
 
     "start_typing_your_note": "Start Typing Your Note",
     "delete_note_prompt": "Are You Sure You Want to Delete This Note?",
@@ -26,7 +29,7 @@
 
     "login_view_prompt": "Please Log In to Your Account In Order to Interact With the Application and Create Notes!",
     
-    "login_view_forgot_password": "Forgot Password",
+    "login_view_forgot_password": "Forgot Password?",
     "login_view_not_registered_yet": "Not Registered Yet? Register here!",
 
     "email_text_field_placeholder": "Enter Your Email Here",

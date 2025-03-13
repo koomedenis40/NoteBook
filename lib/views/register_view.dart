@@ -93,7 +93,7 @@ class _RegisterViewState extends State<RegisterView> {
                 Center(
                   child: Column(
                     children: [
-                      TextButton(
+                      ElevatedButton(
                         onPressed: () async {
                           final email = _email.text;
                           final password = _password.text;
