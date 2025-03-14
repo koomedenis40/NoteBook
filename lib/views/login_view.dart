@@ -18,6 +18,8 @@ class _LoginViewState extends State<LoginView> {
   late final TextEditingController _email;
   late final TextEditingController _password;
 
+  bool _obscurePassword = true;
+
   @override
   void initState() {
     _email = TextEditingController();
@@ -38,16 +40,19 @@ class _LoginViewState extends State<LoginView> {
       listener: (context, state) async {
         if (state is AuthStateLoggedOut) {
           if (state.exception is UserNotFoundAuthException) {
-            await showErrorDialog(context, context.loc.login_error_cannot_find_user);
+            await showErrorDialog(
+                context, context.loc.login_error_cannot_find_user);
           } else if (state.exception is WrongPasswordAuthException) {
-            await showErrorDialog(context, context.loc.login_error_wrong_credentials);
+            await showErrorDialog(
+                context, context.loc.login_error_wrong_credentials);
           } else if (state.exception is GenericAuthException) {
             await showErrorDialog(context, context.loc.login_error_auth_error);
           }
         }
       },
       child: Scaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor, // Ensure consistent background
+        backgroundColor: Theme.of(context)
+            .scaffoldBackgroundColor, // Ensure consistent background
         body: SingleChildScrollView(
           child: SizedBox(
             height: MediaQuery.of(context).size.height, // Make it full screen
@@ -56,9 +61,9 @@ class _LoginViewState extends State<LoginView> {
               child: Column(
                 children: [
                   const Spacer(),
-                  
+
                   // **Hello There, Welcome Back**
-                   Text(
+                  Text(
                     context.loc.login_header,
                     style: TextStyle(
                       color: Colors.white,
@@ -67,18 +72,18 @@ class _LoginViewState extends State<LoginView> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  
+
                   // **Login to Continue**
-                   Text(
+                  Text(
                     context.loc.login_message,
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,
                     ),
                   ),
-                  
+
                   const Spacer(),
-                  
+
                   // **Email Input**
                   TextField(
                     controller: _email,
@@ -87,43 +92,61 @@ class _LoginViewState extends State<LoginView> {
                     keyboardType: TextInputType.emailAddress,
                     decoration: InputDecoration(
                       hintText: context.loc.email_text_field_placeholder,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12)),
                       filled: true,
-                      fillColor: Colors.white.withValues(), // Same opacity effect
+                      fillColor:
+                          Colors.white54, // Same opacity effect
                     ),
                   ),
-                  
+
                   const SizedBox(height: 16),
-                  
-                  // **Password Input**
+
+                  // Password Input
                   TextField(
                     controller: _password,
-                    obscureText: true,
+                    obscureText: _obscurePassword,
                     enableSuggestions: false,
                     autocorrect: false,
                     decoration: InputDecoration(
-                      hintText: context.loc.password_text_field_placeholder,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      filled: true,
-                      fillColor: Colors.white.withValues(),
-                    ),
+                        hintText: context.loc.password_text_field_placeholder,
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                        filled: true,
+                        fillColor: Colors.white54,
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                            color: Colors.black,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _obscurePassword = !_obscurePassword;
+                            });
+                          },
+                        )),
                   ),
-                  
-                  // **Forgot Password**
+
+                  // Forgot Password
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
                       onPressed: () {
-                        context.read<AuthBloc>().add(const AuthEventForgotPassword());
+                        context
+                            .read<AuthBloc>()
+                            .add(const AuthEventForgotPassword());
                       },
-                      style: TextButton.styleFrom(foregroundColor: Colors.white),
+                      style:
+                          TextButton.styleFrom(foregroundColor: Colors.white),
                       child: Text(context.loc.login_view_forgot_password),
                     ),
                   ),
-                  
+
                   const SizedBox(height: 32),
-                  
-                  // **Login Button**
+
+                  // Login Button
                   SizedBox(
                     height: 48,
                     width: double.infinity,
@@ -131,7 +154,9 @@ class _LoginViewState extends State<LoginView> {
                       onPressed: () async {
                         final email = _email.text;
                         final password = _password.text;
-                        context.read<AuthBloc>().add(AuthEventLogIn(email, password));
+                        context
+                            .read<AuthBloc>()
+                            .add(AuthEventLogIn(email, password));
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.amber,
@@ -140,28 +165,29 @@ class _LoginViewState extends State<LoginView> {
                       child: Text(context.loc.login),
                     ),
                   ),
-                  
+
                   const Spacer(),
-                  
+
                   // **Or Sign In With**
                   Text(
                     context.loc.sign_in_with,
                     style: TextStyle(color: Colors.white),
                   ),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   // **Google Login Button**
                   SizedBox(
                     height: 48,
                     child: ElevatedButton(
                       onPressed: () {
-                        print("Google is clicked");
+                        //TODO: Create a Function Here
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
                         foregroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(40)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(40)),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -177,9 +203,9 @@ class _LoginViewState extends State<LoginView> {
                       ),
                     ),
                   ),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   // **Facebook Login Button**
                   SizedBox(
                     height: 48,
@@ -188,7 +214,8 @@ class _LoginViewState extends State<LoginView> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
                         foregroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(40)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(40)),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -204,9 +231,9 @@ class _LoginViewState extends State<LoginView> {
                       ),
                     ),
                   ),
-                  
+
                   const SizedBox(height: 20),
-                  
+
                   // **Not Registered Yet? Sign Up**
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -217,17 +244,21 @@ class _LoginViewState extends State<LoginView> {
                       ),
                       TextButton(
                         onPressed: () {
-                          context.read<AuthBloc>().add(const AuthEventShouldRegister());
+                          context
+                              .read<AuthBloc>()
+                              .add(const AuthEventShouldRegister());
                         },
-                        style: TextButton.styleFrom(foregroundColor: Colors.amber),
+                        style:
+                            TextButton.styleFrom(foregroundColor: Colors.amber),
                         child: const Text(
                           "Register here!",
-                          style: TextStyle(decoration: TextDecoration.underline),
+                          style:
+                              TextStyle(decoration: TextDecoration.underline),
                         ),
                       ),
                     ],
                   ),
-                  
+
                   const Spacer(),
                 ],
               ),

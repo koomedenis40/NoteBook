@@ -10,5 +10,6 @@ class AppColors {
   static const background = Color(0xff1A2947);
   static const black = Color(0xff000000);
   static const white = Color(0xffffffff);
+  // ignore: deprecated_member_use
   static final fieldColor = const Color(0xFFD9D9D9).withOpacity(0.6);
 }

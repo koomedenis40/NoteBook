@@ -39,48 +39,104 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
             await showPasswordResetDialog(context);
           }
           if (state.exception != null) {
-            await showErrorDialog(context,
-                context.loc.forgot_password_view_generic_error);
+            await showErrorDialog(
+                // ignore: use_build_context_synchronously
+                context, context.loc.forgot_password_view_generic_error);
           }
         }
       },
       child: Scaffold(
-        appBar: AppBar(
-          title: Text(context.loc.forgot_password),
-        ),
-        body: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
-                Text(
-                    context.loc.forgot_password_view_prompt),
-                TextField(
-                  keyboardType: TextInputType.emailAddress,
-                  autocorrect: false,
-                  autofocus: true,
-                  controller: _controller,
-                  decoration:
-                      InputDecoration(hintText: context.loc.email_text_field_placeholder),
-                ),
-                TextButton(
-                  onPressed: () {
-                    final email = _controller.text;
-                    context
-                        .read<AuthBloc>()
-                        .add(AuthEventForgotPassword(email: email));
-                  },
-                  child: Text(context.loc.forgot_password_view_send_me_link),
-                ),
-                TextButton(
-                  onPressed: () {
-                    context.read<AuthBloc>().add(
-                          const AuthEventLogOut(),
-                        );
-                  },
-                  child: Text(context.loc.forgot_password_view_back_to_login),
-                ),
-              ],
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: SingleChildScrollView(
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height,
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                children: [
+                  const Spacer(),
+
+                  // **Forgot Password Title**
+                  Text(
+                    context.loc.forgot_password,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Prompt Message
+                  Text(
+                    context.loc.forgot_password_view_prompt,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                    ),
+                  ),
+
+                  const Spacer(),
+
+                  // Email Input Field
+                  TextField(
+                    keyboardType: TextInputType.emailAddress,
+                    autocorrect: false,
+                    autofocus: true,
+                    controller: _controller,
+                    decoration: InputDecoration(
+                      hintText: context.loc.email_text_field_placeholder,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      filled: true,
+                      fillColor: Colors.white54,
+                    ),
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  // Send Reset Link Button
+                  SizedBox(
+                    height: 48,
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        final email = _controller.text;
+                        context.read<AuthBloc>().add(
+                              AuthEventForgotPassword(email: email),
+                            );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.amber,
+                        foregroundColor: Colors.black,
+                      ),
+                      child:
+                          Text(context.loc.forgot_password_view_send_me_link),
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Back to Login Button
+                  TextButton(
+                    onPressed: () {
+                      context.read<AuthBloc>().add(
+                            const AuthEventLogOut(),
+                          );
+                    },
+                    style: TextButton.styleFrom(foregroundColor: Colors.amber),
+                    child: Text(
+                      context.loc.forgot_password_view_back_to_login,
+                      style:
+                          const TextStyle(decoration: TextDecoration.underline),
+                    ),
+                  ),
+                  const Spacer(),
+                ],
+              ),
             ),
           ),
         ),

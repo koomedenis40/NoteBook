@@ -45,11 +45,11 @@
     "register_error_email_already_in_use": "This Email is Already Registered to Another User. Please Choose Another Email!",
     "register_error_generic": "Failed to Register. Please Try Again Later!",
     "register_error_invalid_email": "The Email Address You Entered Appears to be Invalid. Please Try Another Email Address!",
-    "register_view_prompt": "Enter Your Email and Password to See Your Notes!",
+    "register_view_prompt": "We're thrilled that you're interested in joining our team! This application should only take a few minutes. Let's get started.",
     "register_view_already_registered": "Already Registered? Login Here!",
 
     "verify_email_view_prompt": "We Have Sent You an Email Verification. Please Open it to Verify Your Account. If You Have Not Received a Verification Email Yet, Press The Button Below!",
-    "verify_email_send_email_verification": "Send Email Verification",
+    "verify_email_send_email_verification": "Resend Email Verification",
 
     "notes_title": "{count, plural, =0{No Notes Yet} =1{1 Note} other{{count} Notes}}",
     "@notes_title": {
