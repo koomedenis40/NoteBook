@@ -38,4 +38,8 @@ class AuthEventLogOut extends AuthEvent {
   const AuthEventLogOut();
 }
 
+class AuthEventGoogleSignIn extends AuthEvent {
+  const  AuthEventGoogleSignIn();
+}
+
 

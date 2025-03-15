@@ -181,7 +181,7 @@ class _LoginViewState extends State<LoginView> {
                     height: 48,
                     child: ElevatedButton(
                       onPressed: () {
-                        //TODO: Create a Function Here
+                        context.read<AuthBloc>().add(const AuthEventGoogleSignIn());
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
@@ -199,34 +199,6 @@ class _LoginViewState extends State<LoginView> {
                           ),
                           const SizedBox(width: 8),
                           const Text("Login with Google"),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // **Facebook Login Button**
-                  SizedBox(
-                    height: 48,
-                    child: ElevatedButton(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(40)),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Image.asset(
-                            'assets/images/facebook.png',
-                            width: 22,
-                            height: 22,
-                          ),
-                          const SizedBox(width: 8),
-                          const Text("Login with Facebook"),
                         ],
                       ),
                     ),

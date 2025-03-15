@@ -41,6 +41,10 @@ class AuthStateNeedsVerification extends AuthState {
   const AuthStateNeedsVerification({required super.isLoading});
 }
 
+class AuthStateGoogleSigningIn extends AuthState {
+  const AuthStateGoogleSigningIn({required super.isLoading});
+}
+
 class AuthStateLoggedOut extends AuthState with EquatableMixin {
   final Exception? exception;
   const AuthStateLoggedOut(
