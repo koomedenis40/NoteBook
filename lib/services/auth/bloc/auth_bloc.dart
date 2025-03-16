@@ -1,7 +1,11 @@
 import 'package:bloc/bloc.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:mynotes/services/auth/auth_provider.dart';
 import 'package:mynotes/services/auth/bloc/auth_event.dart';
 import 'package:mynotes/services/auth/bloc/auth_state.dart';
+import 'package:mynotes/services/auth/auth_user.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:mynotes/services/auth/auth_exceptions.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   AuthBloc(AuthProvider provider)
@@ -137,6 +141,66 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
             isLoading: false,
           ),
         );
+      }
+    });
+
+    on<AuthEventGoogleSignIn>((event, emit) async {
+      emit(const AuthStateLoggedOut(
+        exception: null,
+        isLoading: true,
+        loadingText: 'Signing in with Google...',
+      ));
+
+      try {
+        final GoogleSignIn googleSignIn = GoogleSignIn();
+
+        // ✅ Force Sign-Out Before Sign-In (Ensures Account Selection)
+        await googleSignIn.signOut();
+
+        // Start the Google Sign-In process
+        final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+
+        if (googleUser == null) {
+          emit(const AuthStateLoggedOut(exception: null, isLoading: false));
+          return;
+        }
+
+        // Get authentication details from Google
+        final GoogleSignInAuthentication googleAuth =
+            await googleUser.authentication;
+
+        final firebase_auth.AuthCredential credential =
+            firebase_auth.GoogleAuthProvider.credential(
+          accessToken: googleAuth.accessToken,
+          idToken: googleAuth.idToken,
+        );
+        // Sign in the user with Firebase Authentication
+        final firebase_auth.UserCredential userCredential = await firebase_auth
+            .FirebaseAuth.instance
+            .signInWithCredential(credential);
+
+        final firebase_auth.User? user = userCredential.user;
+
+        if (user != null) {
+          // Convert Firebase User to AuthUser (your custom class)
+          print("✅ Firebase Authentication Successful: ${user.email}");
+          final authUser = AuthUser.fromFirebase(user);
+
+          // Emit the logged-in state
+          emit(AuthStateLoggedIn(user: authUser, isLoading: false));
+        } else {
+          print("❌ Authentication failed: User is null.");
+          emit(AuthStateLoggedOut(
+            exception: GenericAuthException(),
+            isLoading: false,
+          ));
+        }
+      } catch (e) {
+        print("❌ ERROR: Google Sign-In failed: $e");
+        emit(AuthStateLoggedOut(
+          exception: GenericAuthException(),
+          isLoading: false,
+        ));
       }
     });
 

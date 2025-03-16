@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+
 import 'package:mynotes/extensions/buildcontext/loc.dart';
 import 'package:mynotes/services/auth/auth_service.dart';
 import 'package:mynotes/utilities/dialogs/cannot_share_empty_note_dialog.dart';
@@ -8,6 +8,8 @@ import 'package:mynotes/services/cloud/cloud_note.dart';
 import 'package:mynotes/services/cloud/firebase_cloud_storage.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:open_filex/open_filex.dart';
+
 
 class CreateUpdateNoteView extends StatefulWidget {
   const CreateUpdateNoteView({super.key});
@@ -31,13 +33,13 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
 
   void _textControllerListener() async {
     final note = _note;
-    if (note == null) {
-      return;
-    }
+    if (note == null) return;
+
     final text = _textController.text;
-    await _notesService.updateNote(
+    await _notesService.updateNoteWithAttachments(
       documentId: note.documentId,
       text: text,
+      attachedFiles: _attachedFiles,
     );
   }
 
@@ -51,12 +53,12 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
     if (widgetNote != null) {
       _note = widgetNote;
       _textController.text = widgetNote.text;
+      _attachedFiles = widgetNote.attachedFiles;
       return widgetNote;
     }
     final existingNote = _note;
-    if (existingNote != null) {
-      return existingNote;
-    }
+    if (existingNote != null) return existingNote;
+
     final currentUser = AuthService.firebase().currentUser!;
     final userId = currentUser.id;
     final newNote = await _notesService.createNewNote(ownerUserId: userId);
@@ -75,26 +77,34 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
     final note = _note;
     final text = _textController.text;
     if (note != null && text.isNotEmpty) {
-      await _notesService.updateNote(
+      await _notesService.updateNoteWithAttachments(
         documentId: note.documentId,
         text: text,
+        attachedFiles: _attachedFiles,
       );
     }
   }
 
   Future<void> _pickFiles() async {
     try {
-      // Initialize FilePicker explicitly
-      FilePicker.platform;
-
       FilePickerResult? result = await FilePicker.platform.pickFiles(
-        allowMultiple: true, // Allow multiple file selection
+        allowMultiple: true,
       );
 
       if (result != null && result.files.isNotEmpty) {
         setState(() {
-          _attachedFiles.addAll(result.files.map((file) => file.name));
+          _attachedFiles.addAll(result.files.map((file) => file.path ?? ""));
         });
+
+        // ✅ Save files after picking them
+        if (_note != null) {
+          await _notesService.updateNoteWithAttachments(
+            documentId: _note!.documentId,
+            text: _textController.text,
+            attachedFiles: _attachedFiles,
+          );
+        }
+
         debugPrint("Files selected: ${_attachedFiles.join(", ")}");
       } else {
         debugPrint("User canceled file selection");
@@ -103,6 +113,11 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
       debugPrint("Error picking files: $e");
       debugPrint(stacktrace.toString());
     }
+  }
+
+  Future<void> _openFile(String filePath) async {
+    final result = await OpenFilex.open(filePath);
+    debugPrint("Open result: $result");
   }
 
   @override
@@ -175,9 +190,31 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: _attachedFiles
-                                      .map((file) => Text("📄 $file",
-                                          style: const TextStyle(
-                                              color: Colors.black54)))
+                                      .map(
+                                        (file) => GestureDetector(
+                                          onTap: () => _openFile(file),
+                                          child: Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                                vertical: 4.0),
+                                            child: Row(
+                                              children: [
+                                                const Icon(Icons.insert_drive_file,
+                                                    color: Colors.blueGrey),
+                                                const SizedBox(width: 8),
+                                                Expanded(
+                                                  child: Text(
+                                                    file.split('/').last,
+                                                    style: const TextStyle(
+                                                        color: Colors.black54),
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      )
                                       .toList(),
                                 ),
                             ],
