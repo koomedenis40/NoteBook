@@ -168,7 +168,8 @@ class _NotesViewState extends State<NotesView> {
                           return const Center(
                             child: Text(
                               "No notes yet, tap + to create one!",
-                              style: TextStyle(color: Colors.white, fontSize: 16),
+                              style:
+                                  TextStyle(color: Colors.white, fontSize: 16),
                             ),
                           );
                         }
@@ -179,7 +180,8 @@ class _NotesViewState extends State<NotesView> {
                           notes: sorted,
                           isGridView: _isGridView,
                           onDeleteNote: (note) async {
-                            await _notesService.deleteNote(documentId: note.documentId);
+                            await _notesService.deleteNote(
+                                documentId: note.documentId);
                           },
                           onTap: (note) {
                             Navigator.of(context).pushNamed(
@@ -211,28 +213,37 @@ class _NotesViewState extends State<NotesView> {
       // -------------------------
       // BOTTOM NAVIGATION BAR
       // -------------------------
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        backgroundColor: Color.fromARGB(255, 10, 19, 36),
-        unselectedItemColor: Colors.grey,
-        selectedItemColor: Colors.white,
-        onTap: (newIndex) {
-          setState(() {
-            _currentIndex = newIndex;
-          });
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.notes),
-            label: 'All Notes',
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            height: 1,
+            color: Colors.white10,
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.push_pin),
-            label: 'Pinned',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.lock),
-            label: 'Private Notes',
+          BottomNavigationBar(
+            currentIndex: _currentIndex,
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+            unselectedItemColor: Colors.grey,
+            selectedItemColor: Colors.white,
+            onTap: (newIndex) {
+              setState(() {
+                _currentIndex = newIndex;
+              });
+            },
+            items: const [
+              BottomNavigationBarItem(
+                icon: Icon(Icons.notes),
+                label: 'All Notes',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.push_pin),
+                label: 'Pinned Notes',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.lock),
+                label: 'Private Notes',
+              ),
+            ],
           ),
         ],
       ),
