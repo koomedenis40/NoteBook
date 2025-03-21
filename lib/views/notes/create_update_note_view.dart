@@ -22,6 +22,12 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
   late final TextEditingController _textController;
   List<String> _attachedFiles = [];
 
+  // ✅ Flag to ensure we only create one note per session
+  bool _noteCreationInProgress = false;
+
+  // ✅ Track previous text to avoid redundant updates (if needed)
+  String _previousText = "";
+
   @override
   void initState() {
     super.initState();
@@ -37,7 +43,8 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
     super.dispose();
   }
 
-  // If we're editing an existing note, load it
+  // ✅ Load an existing note (if editing) 
+  // This function is called once, so if you're editing, it loads the note.
   Future<void> _loadNoteIfEditing(BuildContext context) async {
     final noteArg = context.getArgument<CloudNote>();
     if (noteArg != null && _existingNote == null) {
@@ -45,18 +52,24 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
         _existingNote = noteArg;
         _textController.text = noteArg.text;
         _attachedFiles = noteArg.attachedFiles;
+        _previousText = noteArg.text;
       });
     }
   }
 
-  // Called whenever the text field changes
+  // ✅ Handle text changes
+  // This function checks if a note already exists.
+  // If not, and if text is non-empty, it creates a note only once.
   void _handleTextChanged() async {
     final text = _textController.text.trim();
-    // 1) If no existing note & text is non-empty => create new doc
-    if (_existingNote == null && text.isNotEmpty) {
+
+    // If no note exists, text is non-empty, and creation is not already in progress:
+    if (_existingNote == null && text.isNotEmpty && !_noteCreationInProgress) {
+      _noteCreationInProgress = true; // set flag to avoid duplicate creation
       await _createNewNoteInFirestore(text);
+      _noteCreationInProgress = false; // reset flag after creation
     }
-    // 2) If we have an existing note & text is non-empty => update doc
+    // If a note exists and text is non-empty, update it.
     else if (_existingNote != null && text.isNotEmpty) {
       await _notesService.updateNoteWithAttachments(
         documentId: _existingNote!.documentId,
@@ -64,18 +77,21 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
         attachedFiles: _attachedFiles,
       );
     }
-    // 3) If we have an existing note & user cleared the text => delete doc
+    // If a note exists and text is empty, delete it.
     else if (_existingNote != null && text.isEmpty) {
       await _notesService.deleteNote(documentId: _existingNote!.documentId);
       setState(() {
         _existingNote = null;
       });
     }
+    _previousText = text;
   }
 
-  // Create a new note doc in Firestore
+  // ✅ Create a new note in Firestore.
+  // This function is only called once when the user first types non-empty text.
   Future<void> _createNewNoteInFirestore(String text) async {
     final currentUser = AuthService.firebase().currentUser!;
+    // Pass the text even if it's non-empty because our listener ensures this is only called when text is provided.
     final newNote = await _notesService.createNewNote(
       ownerUserId: currentUser.id,
       text: text,
@@ -94,14 +110,11 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
 
   Future<void> _pickFiles() async {
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        allowMultiple: true,
-      );
+      FilePickerResult? result = await FilePicker.platform.pickFiles(allowMultiple: true);
       if (result != null && result.files.isNotEmpty) {
         setState(() {
           _attachedFiles.addAll(result.files.map((file) => file.path ?? ""));
         });
-        // If we already have a note & text is non-empty => update attachments
         final text = _textController.text.trim();
         if (_existingNote != null && text.isNotEmpty) {
           await _notesService.updateNoteWithAttachments(
@@ -122,7 +135,7 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
     debugPrint("Open result: $result");
   }
 
-  // The user may tap Save manually. We do one last update & pop.
+  // Manual save when the user taps Save.
   Future<void> _manualSaveAndPop() async {
     final text = _textController.text.trim();
     if (text.isNotEmpty && _existingNote != null) {
@@ -140,115 +153,77 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder(
-      future: _loadNoteIfEditing(context),
+      future: _loadNoteIfEditing(context), // Load note if editing; if not, note remains null until text is entered.
       builder: (context, snapshot) {
-        switch (snapshot.connectionState) {
-          case ConnectionState.none:
-          case ConnectionState.active:
-          case ConnectionState.waiting:
-          case ConnectionState.done:
-            return Scaffold(
-              appBar: AppBar(
-                title: Text(
-                  _existingNote == null
-                      ? context.loc.note // "Create Note"
-                      : "Edit Note",
-                  style: const TextStyle(color: Colors.white),
-                ),
-                iconTheme: const IconThemeData(color: Colors.white),
-                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-                actions: [
-                  // Share
-                  IconButton(
-                    onPressed: () async {
-                      final text = _textController.text.trim();
-                      if (text.isEmpty) {
-                        await showCannotShareEmptyNoteDialog(context);
-                      } else {
-                        Share.share(text);
-                      }
-                    },
-                    icon: const Icon(Icons.share, color: Colors.white),
-                  ),
-                  // Save icon (user can manually save & pop)
-                  IconButton(
-                    onPressed: _manualSaveAndPop,
-                    icon: const Icon(Icons.save, color: Colors.white),
-                  ),
-                ],
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(
+              _existingNote == null ? context.loc.note : "Edit Note",
+              style: const TextStyle(color: Colors.white),
+            ),
+            iconTheme: const IconThemeData(color: Colors.white),
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+            actions: [
+              IconButton(
+                onPressed: () async {
+                  final text = _textController.text.trim();
+                  if (text.isEmpty) {
+                    await showCannotShareEmptyNoteDialog(context);
+                  } else {
+                    Share.share(text);
+                  }
+                },
+                icon: const Icon(Icons.share, color: Colors.white),
               ),
-              body: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    Expanded(
-                      child: Card(
-                        elevation: 4,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(12.0),
-                          child: Column(
-                            children: [
-                              Expanded(
-                                child: TextField(
-                                  controller: _textController,
-                                  keyboardType: TextInputType.multiline,
-                                  maxLines: null,
-                                  decoration: InputDecoration(
-                                    hintText: context.loc.start_typing_your_note,
-                                    border: InputBorder.none,
-                                  ),
-                                ),
+              IconButton(
+                onPressed: _manualSaveAndPop,
+                icon: const Icon(Icons.save, color: Colors.white),
+              ),
+            ],
+          ),
+          body: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                Expanded(
+                  child: Card(
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Column(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _textController,
+                              keyboardType: TextInputType.multiline,
+                              maxLines: null,
+                              decoration: InputDecoration(
+                                hintText: context.loc.start_typing_your_note,
+                                border: InputBorder.none,
                               ),
-                              const SizedBox(height: 10),
-                              if (_attachedFiles.isNotEmpty)
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: _attachedFiles.map((file) {
-                                    final fileName = file.split('/').last;
-                                    return GestureDetector(
-                                      onTap: () => _openFile(file),
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(vertical: 4.0),
-                                        child: Row(
-                                          children: [
-                                            const Icon(Icons.insert_drive_file,
-                                                color: Colors.blueGrey),
-                                            const SizedBox(width: 8),
-                                            Expanded(
-                                              child: Text(
-                                                fileName,
-                                                style: const TextStyle(color: Colors.black54),
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    );
-                                  }).toList(),
-                                ),
-                            ],
+                            ),
                           ),
-                        ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 20),
-                    ElevatedButton.icon(
-                      onPressed: _pickFiles,
-                      icon: const Icon(Icons.attach_file, color: Colors.white),
-                      label: const Text("Attach File", style: TextStyle(color: Colors.white)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blueGrey,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-            );
-        }
+                const SizedBox(height: 20),
+                ElevatedButton.icon(
+                  onPressed: _pickFiles,
+                  icon: const Icon(Icons.attach_file, color: Colors.white),
+                  label: const Text("Attach File", style: TextStyle(color: Colors.white)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blueGrey,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
       },
     );
   }

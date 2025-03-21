@@ -104,7 +104,7 @@ class _RegisterViewState extends State<RegisterView> {
         }
       },
       child: Scaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        backgroundColor: const Color.fromARGB(255, 9, 101, 177), 
         body: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(16.0),

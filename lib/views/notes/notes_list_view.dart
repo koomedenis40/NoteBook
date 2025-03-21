@@ -70,59 +70,63 @@ class NotesListView extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Top row: Date + Pin Icon
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      _formattedDate(note),
-                      style: const TextStyle(
-                        color: Colors.grey,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () => onTogglePin(note),
-                    icon: Icon(
-                      note.pinned ? Icons.push_pin : Icons.push_pin_outlined,
-                      color: note.pinned ? Colors.yellow : Colors.white,
-                    ),
-                    iconSize: 20,
-                  ),
-                ],
-              ),
-              // Note text
-              Expanded(
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  child: Text(
-                    note.text,
-                    style: const TextStyle(color: Colors.white, fontSize: 14),
-                  ),
+              // Note text at the top
+              Text(
+                note.text,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
                 ),
+                overflow: TextOverflow.fade,
+                maxLines: 10,
               ),
-              const SizedBox(height: 8),
-              // Last updated
+
+              const Spacer(),
+
+              // 1st bottom row: Updated time
               Text(
                 "Updated: ${_formattedDate(note, updated: true)}",
-                style: const TextStyle(color: Colors.grey, fontSize: 12),
+                style: const TextStyle(
+                  color: Colors.grey,
+                  fontSize: 12,
+                ),
               ),
-              // Delete icon
+
+              const SizedBox(height: 8),
+
+              // 2nd bottom row: Icons aligned right
               Align(
-                alignment: Alignment.bottomRight,
-                child: IconButton(
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                  iconSize: 20,
-                  onPressed: () async {
-                    final shouldDelete = await showDeleteDialog(context);
-                    if (shouldDelete) {
-                      onDeleteNote(note);
-                    }
-                  },
-                  icon: const Icon(Icons.delete, color: Colors.redAccent),
+                alignment: Alignment.centerRight,
+                child: Wrap(
+                  spacing: 12,
+                  children: [
+                    _buildIcon(
+                      icon: note.pinned
+                          ? Icons.push_pin
+                          : Icons.push_pin_outlined,
+                      color: note.pinned ? Colors.yellow : Colors.white,
+                      onPressed: () => onTogglePin(note),
+                    ),
+                    const SizedBox(width: 4),
+                    _buildIcon(
+                      icon: Icons.delete,
+                      color: Colors.redAccent,
+                      onPressed: () async {
+                        final shouldDelete = await showDeleteDialog(context);
+                        if (shouldDelete) {
+                          onDeleteNote(note);
+                        }
+                      },
+                    ),
+                    const SizedBox(width: 4),
+                    _buildIcon(
+                      icon: Icons.lock_outline,
+                      color: Colors.white,
+                      onPressed: () {
+                        // TODO: Lock note
+                      },
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -132,11 +136,28 @@ class NotesListView extends StatelessWidget {
     );
   }
 
+  Widget _buildIcon({
+    required IconData icon,
+    required Color color,
+    required VoidCallback onPressed,
+  }) {
+    return SizedBox(
+      height: 28,
+      width: 28,
+      child: IconButton(
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints(),
+        iconSize: 18,
+        onPressed: onPressed,
+        icon: Icon(icon, color: color),
+      ),
+    );
+  }
+
   String _formattedDate(CloudNote note, {bool updated = false}) {
     final date = updated ? note.updatedAt : note.createdAt;
     return "${date.year}-${date.month.toString().padLeft(2, '0')}-"
-           "${date.day.toString().padLeft(2, '0')} "
-           "${date.hour.toString().padLeft(2, '0')}:"
-           "${date.minute.toString().padLeft(2, '0')}";
+        "${date.day.toString().padLeft(2, '0')} ";
+
   }
 }

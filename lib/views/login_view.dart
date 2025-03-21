@@ -51,8 +51,7 @@ class _LoginViewState extends State<LoginView> {
         }
       },
       child: Scaffold(
-        backgroundColor: Theme.of(context)
-            .scaffoldBackgroundColor, // Ensure consistent background
+        backgroundColor: const Color.fromARGB(255, 9, 101, 177), // Ensure consistent background
         body: SingleChildScrollView(
           child: SizedBox(
             height: MediaQuery.of(context).size.height, // Make it full screen

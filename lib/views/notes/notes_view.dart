@@ -45,13 +45,13 @@ class _NotesViewState extends State<NotesView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: Colors.blue[100],
 
       // -------------------------
       // APP BAR
       // -------------------------
       appBar: AppBar(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        backgroundColor: const Color.fromARGB(255, 9, 101, 177),
         title: StreamBuilder(
           stream: _notesService.allNotes(ownerUserId: userId).getLength,
           builder: (context, AsyncSnapshot<int> snapshot) {
@@ -61,7 +61,7 @@ class _NotesViewState extends State<NotesView> {
               return Text(
                 text,
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: Colors.black,
                   fontWeight: FontWeight.bold,
                   fontSize: 20,
                 ),
@@ -74,7 +74,10 @@ class _NotesViewState extends State<NotesView> {
         actions: [
           // 1) Toggle Grid/List
           IconButton(
-            icon: Icon(_isGridView ? Icons.view_list : Icons.grid_view),
+            icon: Icon(
+              _isGridView ? Icons.view_list : Icons.grid_view,
+              color: Colors.black,
+            ),
             onPressed: () {
               setState(() {
                 _isGridView = !_isGridView;
@@ -84,7 +87,10 @@ class _NotesViewState extends State<NotesView> {
 
           // 2) Sort popup (with a sort icon)
           PopupMenuButton<String>(
-            icon: const Icon(Icons.sort, color: Colors.white),
+            icon: const Icon(
+              Icons.sort,
+              color: Colors.black,
+            ),
             onSelected: (value) {
               setState(() {
                 if (value == 'Sort by Created') {
@@ -117,12 +123,18 @@ class _NotesViewState extends State<NotesView> {
             onPressed: () {
               Navigator.of(context).pushNamed(createOrUpdateNoteRoute);
             },
-            icon: const Icon(Icons.add, color: Colors.white),
+            icon: const Icon(
+              Icons.add,
+              color: Colors.black,
+            ),
           ),
 
           // 4) Logout popup
           PopupMenuButton<MenuAction>(
-            icon: const Icon(Icons.more_vert, color: Colors.white),
+            icon: const Icon(
+              Icons.more_vert,
+              color: Colors.black,
+            ),
             onSelected: (value) async {
               switch (value) {
                 case MenuAction.logout:
@@ -222,8 +234,8 @@ class _NotesViewState extends State<NotesView> {
           ),
           BottomNavigationBar(
             currentIndex: _currentIndex,
-            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-            unselectedItemColor: Colors.grey,
+            backgroundColor: const Color.fromARGB(255, 108, 163, 207),
+            unselectedItemColor: Colors.black,
             selectedItemColor: Colors.white,
             onTap: (newIndex) {
               setState(() {
