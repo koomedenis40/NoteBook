@@ -51,7 +51,8 @@ class _LoginViewState extends State<LoginView> {
         }
       },
       child: Scaffold(
-        backgroundColor: const Color.fromARGB(255, 9, 101, 177), // Ensure consistent background
+        backgroundColor:
+            Color.fromRGBO(61, 90, 128, 1.0), // Ensure consistent background
         body: SingleChildScrollView(
           child: SizedBox(
             height: MediaQuery.of(context).size.height, // Make it full screen
@@ -94,8 +95,7 @@ class _LoginViewState extends State<LoginView> {
                       border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12)),
                       filled: true,
-                      fillColor:
-                          Colors.white54, // Same opacity effect
+                      fillColor: Colors.white54, // Same opacity effect
                     ),
                   ),
 
@@ -158,7 +158,7 @@ class _LoginViewState extends State<LoginView> {
                             .add(AuthEventLogIn(email, password));
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.amber,
+                        backgroundColor: Color.fromRGBO(238, 108, 77, 1.0),
                         foregroundColor: Colors.black,
                       ),
                       child: Text(context.loc.login),
@@ -180,7 +180,9 @@ class _LoginViewState extends State<LoginView> {
                     height: 48,
                     child: ElevatedButton(
                       onPressed: () {
-                        context.read<AuthBloc>().add(const AuthEventGoogleSignIn());
+                        context
+                            .read<AuthBloc>()
+                            .add(const AuthEventGoogleSignIn());
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
@@ -219,8 +221,9 @@ class _LoginViewState extends State<LoginView> {
                               .read<AuthBloc>()
                               .add(const AuthEventShouldRegister());
                         },
-                        style:
-                            TextButton.styleFrom(foregroundColor: Colors.amber),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Color.fromRGBO(238, 108, 77, 1.0),
+                        ),
                         child: const Text(
                           "Register here!",
                           style:

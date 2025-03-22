@@ -63,7 +63,7 @@ class NotesListView extends StatelessWidget {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),
-        color: Colors.grey[850],
+        color: Color.fromRGBO(61, 90, 127, 1.0),
         elevation: 3,
         child: Padding(
           padding: const EdgeInsets.all(12.0),

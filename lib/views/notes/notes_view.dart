@@ -51,7 +51,7 @@ class _NotesViewState extends State<NotesView> {
       // APP BAR
       // -------------------------
       appBar: AppBar(
-        backgroundColor: const Color.fromARGB(255, 9, 101, 177),
+        backgroundColor: Color.fromRGBO(61, 90, 128, 1.0),
         title: StreamBuilder(
           stream: _notesService.allNotes(ownerUserId: userId).getLength,
           builder: (context, AsyncSnapshot<int> snapshot) {
@@ -234,7 +234,7 @@ class _NotesViewState extends State<NotesView> {
           ),
           BottomNavigationBar(
             currentIndex: _currentIndex,
-            backgroundColor: const Color.fromARGB(255, 108, 163, 207),
+            backgroundColor: const Color.fromRGBO(61, 90, 128, 1.0),
             unselectedItemColor: Colors.black,
             selectedItemColor: Colors.white,
             onTap: (newIndex) {
