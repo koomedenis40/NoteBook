@@ -199,7 +199,7 @@ class _LoginViewState extends State<LoginView> {
                             height: 22,
                           ),
                           const SizedBox(width: 8),
-                          const Text("Login with Google"),
+                          const Text("Continue with Google"),
                         ],
                       ),
                     ),

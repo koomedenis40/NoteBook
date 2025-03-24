@@ -46,7 +46,7 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
         }
       },
       child: Scaffold(
-        backgroundColor: const Color.fromARGB(255, 9, 101, 177), 
+        backgroundColor: Color.fromRGBO(61, 90, 128, 1.0), 
         body: SingleChildScrollView(
           child: SizedBox(
             height: MediaQuery.of(context).size.height,

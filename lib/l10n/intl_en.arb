@@ -12,7 +12,7 @@
     "restart": "Restart",
     "login_header": "Hello there, Welcome Back!",
     "login_message": "Login to Continue",
-    "sign_in_with": "Or Log In With",
+    "sign_in_with": "Or Continue With",
 
     "start_typing_your_note": "Start Typing Your Note",
     "delete_note_prompt": "Are You Sure You Want to Delete This Note?",
