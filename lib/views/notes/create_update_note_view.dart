@@ -24,7 +24,9 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
   List<String> _attachedFiles = [];
   Timer? _debounceTimer;
 
-  static const Color backgroundColor = Color.fromRGBO(61, 90, 128, 1.0);
+  // Updated background color: a warmer, muted teal
+  static const Color backgroundColor = Color.fromRGBO(70, 100, 110, 1.0);
+  static const Color accentColor = Color.fromRGBO(90, 120, 130, 1.0); // Slightly lighter for contrast
 
   @override
   void initState() {
@@ -148,17 +150,17 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
             child: AppBar(
               backgroundColor: backgroundColor,
               elevation: 0,
-              leadingWidth: 40, // Reduce leading width to minimize gap
+              leadingWidth: 40,
               leading: IconButton(
-                icon: const Icon(Icons.arrow_back_ios, size: 18), // Smaller icon
+                icon: const Icon(Icons.arrow_back_ios, size: 18),
                 onPressed: () => Navigator.of(context).pop(),
-                padding: const EdgeInsets.only(left: 8), // Move closer to edge
+                padding: const EdgeInsets.only(left: 8),
               ),
-              titleSpacing: 0, // Remove default title spacing
+              titleSpacing: 0,
               title: Padding(
-                padding: const EdgeInsets.only(left: 8.0), // Minimal padding for alignment
+                padding: const EdgeInsets.only(left: 8.0),
                 child: Row(
-                  mainAxisSize: MainAxisSize.min, // Prevent stretching
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       _existingNote == null ? 'New Note' : 'Edit Note',
@@ -167,29 +169,27 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
                             color: Colors.white,
                           ),
                     ),
-                    if (_existingNote != null) ...[
-                      const SizedBox(width: 12),
-                      Text(
-                        'Saved',
-                        style: TextStyle(
-                          color: Colors.greenAccent[700],
-                          fontSize: 14,
-                          fontStyle: FontStyle.italic,
-                        ),
+                    const SizedBox(width: 12),
+                    Text(
+                      _existingNote == null ? 'Draft' : 'Saved',
+                      style: TextStyle(
+                        color: _existingNote == null ? Colors.orangeAccent : Colors.greenAccent[700],
+                        fontSize: 14,
+                        fontStyle: FontStyle.italic,
                       ),
-                    ],
+                    ),
                   ],
                 ),
               ),
               actions: [
                 IconButton(
-                  icon: const Icon(Icons.save, size: 18), // Smaller save icon
+                  icon: const Icon(Icons.save, size: 18),
                   onPressed: _manualSaveAndPop,
                   tooltip: 'Save',
                   color: Colors.white,
                 ),
                 IconButton(
-                  icon: const Icon(Icons.share, size: 18), // Smaller share icon
+                  icon: const Icon(Icons.share, size: 18),
                   onPressed: _shareNote,
                   tooltip: 'Share Note',
                   color: Colors.white,
@@ -198,127 +198,127 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
               ],
             ),
           ),
-          body: Column(
-            children: [
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _textController,
-                          keyboardType: TextInputType.multiline,
-                          maxLines: null,
-                          expands: true,
-                          textAlign: TextAlign.left,
-                          textAlignVertical: TextAlignVertical.top,
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                height: 1.5,
-                                color: Colors.white,
+          body: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [backgroundColor, accentColor], // Subtle gradient
+              ),
+            ),
+            child: Column(
+              children: [
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 8.0, right: 16.0, top: 8.0), // Align with title
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _textController,
+                            keyboardType: TextInputType.multiline,
+                            maxLines: null,
+                            expands: true,
+                            textAlign: TextAlign.left,
+                            textAlignVertical: TextAlignVertical.top,
+                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                  height: 1.5,
+                                  color: Colors.white,
+                                ),
+                            decoration: InputDecoration(
+                              hintText: context.loc.start_typing_your_note,
+                              hintStyle: TextStyle(
+                                color: Colors.white.withOpacity(0.4),
                               ),
-                          decoration: InputDecoration(
-                            hintText: context.loc.start_typing_your_note,
-                            hintStyle: TextStyle(
-                              color: Colors.white.withOpacity(0.4),
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.zero,
                             ),
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.zero,
                           ),
                         ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8.0),
-                        child: Text(
-                          _existingNote != null
-                              ? 'Last edited: ${DateTime.now().toString().substring(0, 16)}'
-                              : 'Created: ${DateTime.now().toString().substring(0, 16)}',
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.6),
-                            fontSize: 12,
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8.0),
+                          child: Text(
+                            _existingNote != null
+                                ? 'Last edited: ${DateTime.now().toString().substring(0, 16)}'
+                                : 'Created: ${DateTime.now().toString().substring(0, 16)}',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.6),
+                              fontSize: 12,
+                            ),
                           ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                if (_attachedFiles.isNotEmpty)
+                  Container(
+                    height: 80,
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    decoration: BoxDecoration(
+                      border: Border(
+                        top: BorderSide(
+                          color: Colors.white.withOpacity(0.1),
+                        ),
+                      ),
+                    ),
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      itemCount: _attachedFiles.length,
+                      itemBuilder: (context, index) {
+                        final filePath = _attachedFiles[index];
+                        final fileName = filePath.split('/').last;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8.0),
+                          child: GestureDetector(
+                            onTap: () => _openFile(filePath),
+                            child: Chip(
+                              label: Text(
+                                fileName,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                ),
+                              ),
+                              backgroundColor: accentColor.withOpacity(0.8),
+                              elevation: 1,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                Container(
+                  padding: const EdgeInsets.all(16.0),
+                  color: accentColor, // Match gradient end
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton(
+                        icon: const Icon(
+                          Icons.attach_file,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                        onPressed: _pickFiles,
+                        tooltip: 'Attach File',
+                      ),
+                      Text(
+                        '${_textController.text.length} characters',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.6),
+                          fontSize: 12,
                         ),
                       ),
                     ],
                   ),
                 ),
-              ),
-              if (_attachedFiles.isNotEmpty)
-                Container(
-                  height: 80,
-                  padding: const EdgeInsets.symmetric(vertical: 8.0),
-                  decoration: BoxDecoration(
-                    border: Border(
-                      top: BorderSide(
-                        color: Colors.white.withOpacity(0.1),
-                      ),
-                    ),
-                  ),
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    itemCount: _attachedFiles.length,
-                    itemBuilder: (context, index) {
-                      final filePath = _attachedFiles[index];
-                      final fileName = filePath.split('/').last;
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8.0),
-                        child: GestureDetector(
-                          onTap: () => _openFile(filePath),
-                          child: Chip(
-                            label: Text(
-                              fileName,
-                              style: const TextStyle(
-                                color: Colors.white,
-                              ),
-                            ),
-                            backgroundColor: backgroundColor.withOpacity(0.8),
-                            elevation: 1,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              Container(
-                padding: const EdgeInsets.all(16.0),
-                decoration: BoxDecoration(
-                  color: backgroundColor,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, -2),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    IconButton(
-                      icon: const Icon(
-                        Icons.attach_file,
-                        color: Colors.white,
-                        size: 18, // Smaller icon
-                      ),
-                      onPressed: _pickFiles,
-                      tooltip: 'Attach File',
-                    ),
-                    Text(
-                      '${_textController.text.length} characters',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.6),
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
