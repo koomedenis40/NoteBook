@@ -45,13 +45,13 @@ class _NotesViewState extends State<NotesView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.blue[100],
+      backgroundColor: Colors.grey.shade100,
 
       // -------------------------
       // APP BAR
       // -------------------------
       appBar: AppBar(
-        backgroundColor: Color.fromRGBO(61, 90, 128, 1.0),
+        backgroundColor: Colors.grey.shade300,
         title: StreamBuilder(
           stream: _notesService.allNotes(ownerUserId: userId).getLength,
           builder: (context, AsyncSnapshot<int> snapshot) {
@@ -181,7 +181,7 @@ class _NotesViewState extends State<NotesView> {
                             child: Text(
                               "No notes yet, tap + to create one!",
                               style:
-                                  TextStyle(color: Colors.white, fontSize: 16),
+                                  TextStyle(color:Color.fromRGBO(31, 41, 55, 1), fontSize: 16),
                             ),
                           );
                         }
@@ -234,7 +234,7 @@ class _NotesViewState extends State<NotesView> {
           ),
           BottomNavigationBar(
             currentIndex: _currentIndex,
-            backgroundColor: const Color.fromRGBO(61, 90, 128, 1.0),
+            backgroundColor:  Colors.grey.shade300,
             unselectedItemColor: Colors.black,
             selectedItemColor: Colors.white,
             onTap: (newIndex) {

@@ -25,8 +25,8 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
   Timer? _debounceTimer;
 
   // Updated background color: a warmer, muted teal
-  static const Color backgroundColor = Color.fromRGBO(70, 100, 110, 1.0);
-  static const Color accentColor = Color.fromRGBO(90, 120, 130, 1.0); // Slightly lighter for contrast
+  static const Color backgroundColor = Color.fromRGBO(249, 250, 251, 1);
+  static  Color accentColor = Colors.grey.shade300; // Slightly lighter for contrast
 
   @override
   void initState() {
@@ -144,11 +144,11 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
       future: _loadNoteIfEditing(context),
       builder: (context, snapshot) {
         return Scaffold(
-          backgroundColor: backgroundColor,
+          backgroundColor: Colors.grey.shade100,
           appBar: PreferredSize(
             preferredSize: const Size.fromHeight(80),
             child: AppBar(
-              backgroundColor: backgroundColor,
+              backgroundColor: Colors.grey.shade300,
               elevation: 0,
               leadingWidth: 40,
               leading: IconButton(
@@ -166,7 +166,7 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
                       _existingNote == null ? 'New Note' : 'Edit Note',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.w600,
-                            color: Colors.white,
+                            color: Color.fromRGBO(31, 41, 55, 1),
                           ),
                     ),
                     const SizedBox(width: 12),
@@ -175,7 +175,7 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
                       style: TextStyle(
                         color: _existingNote == null ? Colors.orangeAccent : Colors.greenAccent[700],
                         fontSize: 14,
-                        fontStyle: FontStyle.italic,
+                        
                       ),
                     ),
                   ],
@@ -186,13 +186,13 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
                   icon: const Icon(Icons.save, size: 18),
                   onPressed: _manualSaveAndPop,
                   tooltip: 'Save',
-                  color: Colors.white,
+                  color: Colors.black,
                 ),
                 IconButton(
                   icon: const Icon(Icons.share, size: 18),
                   onPressed: _shareNote,
                   tooltip: 'Share Note',
-                  color: Colors.white,
+                  color: Colors.blue,
                 ),
                 const SizedBox(width: 8),
               ],
@@ -224,12 +224,12 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
                             textAlignVertical: TextAlignVertical.top,
                             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                                   height: 1.5,
-                                  color: Colors.white,
+                                  color: Color.fromRGBO(31, 41, 55, 1),
                                 ),
                             decoration: InputDecoration(
                               hintText: context.loc.start_typing_your_note,
                               hintStyle: TextStyle(
-                                color: Colors.white.withOpacity(0.4),
+                                color:Color.fromRGBO(31, 41, 55, 1),
                               ),
                               border: InputBorder.none,
                               contentPadding: EdgeInsets.zero,
@@ -243,7 +243,7 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
                                 ? 'Last edited: ${DateTime.now().toString().substring(0, 16)}'
                                 : 'Created: ${DateTime.now().toString().substring(0, 16)}',
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.6),
+                              color: Color.fromRGBO(31, 41, 55, 1),
                               fontSize: 12,
                             ),
                           ),
@@ -278,7 +278,7 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
                               label: Text(
                                 fileName,
                                 style: const TextStyle(
-                                  color: Colors.white,
+                                  color: Color.fromRGBO(31, 41, 55, 1),
                                 ),
                               ),
                               backgroundColor: accentColor.withOpacity(0.8),
@@ -301,7 +301,7 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
                       IconButton(
                         icon: const Icon(
                           Icons.attach_file,
-                          color: Colors.white,
+                          color: Color.fromRGBO(31, 41, 55, 1),
                           size: 18,
                         ),
                         onPressed: _pickFiles,
@@ -310,7 +310,7 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
                       Text(
                         '${_textController.text.length} characters',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.6),
+                          color: Color.fromRGBO(31, 41, 55, 1),
                           fontSize: 12,
                         ),
                       ),

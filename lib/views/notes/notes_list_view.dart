@@ -63,7 +63,7 @@ class NotesListView extends StatelessWidget {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),
-        color: Color.fromRGBO(61, 90, 127, 1.0),
+        color: Colors.white,
         elevation: 3,
         child: Padding(
           padding: const EdgeInsets.all(12.0),
@@ -74,7 +74,7 @@ class NotesListView extends StatelessWidget {
               Text(
                 note.text,
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: Color.fromRGBO(31, 41, 55, 1),
                   fontSize: 14,
                 ),
                 overflow: TextOverflow.fade,
@@ -104,7 +104,7 @@ class NotesListView extends StatelessWidget {
                       icon: note.pinned
                           ? Icons.push_pin
                           : Icons.push_pin_outlined,
-                      color: note.pinned ? Colors.yellow : Colors.white,
+                      color: note.pinned ? Colors.yellow : Colors.blue,
                       onPressed: () => onTogglePin(note),
                     ),
                     const SizedBox(width: 4),
@@ -121,7 +121,7 @@ class NotesListView extends StatelessWidget {
                     const SizedBox(width: 4),
                     _buildIcon(
                       icon: Icons.lock_outline,
-                      color: Colors.white,
+                      color: Colors.blue,
                       onPressed: () {
                         // TODO: Lock note
                       },
