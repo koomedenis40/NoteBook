@@ -46,6 +46,7 @@ class FirebaseCloudStorage {
   Future<void> updateNoteWithAttachments({
     required String documentId,
     required String text,
+     required String title, 
     required List<String> attachedFiles,
     bool? pinned,
     bool? isPrivate,
@@ -54,6 +55,7 @@ class FirebaseCloudStorage {
       final updateData = <String, dynamic>{
         textFieldName: text,
         'attachedFiles': attachedFiles,
+        'title': title,
         'updatedAt': FieldValue.serverTimestamp(),
       };
       if (pinned != null) {
@@ -83,11 +85,13 @@ class FirebaseCloudStorage {
   Future<CloudNote> createNewNote({
     required String ownerUserId,
     required String text,
+     required String title, 
   }) async {
     try {
       final documentRef = await notes.add({
         ownerUserIdFieldName: ownerUserId,
         textFieldName: text,
+        'title': title,
         'attachedFiles': [],
         'pinned': false,
         'isPrivate': false,

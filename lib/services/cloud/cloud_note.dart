@@ -6,6 +6,7 @@ import 'package:mynotes/services/cloud/cloud_storage_constants.dart';
 class CloudNote {
   final String documentId;
   final String ownerUserId;
+  final String title;
   final String text;
   final List<String> attachedFiles;
   final bool pinned;
@@ -16,6 +17,7 @@ class CloudNote {
   const CloudNote({
     required this.documentId,
     required this.ownerUserId,
+    required this.title,
     required this.text,
     required this.attachedFiles,
     required this.pinned,
@@ -28,6 +30,7 @@ class CloudNote {
       : documentId = snapshot.id,
         ownerUserId = snapshot.data()[ownerUserIdFieldName] as String,
         text = snapshot.data()[textFieldName] as String? ?? '',
+        title = snapshot.data()['title'] as String? ?? '',
         attachedFiles = List<String>.from(snapshot.data()['attachedFiles'] ?? []),
         pinned = snapshot.data()['pinned'] as bool? ?? false,
         isPrivate = snapshot.data()['isPrivate'] as bool? ?? false,
