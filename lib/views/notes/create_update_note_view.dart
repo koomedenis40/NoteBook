@@ -5,6 +5,7 @@ import 'package:mynotes/services/auth/auth_service.dart';
 import 'package:mynotes/services/cloud/cloud_note.dart';
 import 'package:mynotes/services/cloud/firebase_cloud_storage.dart';
 import 'package:mynotes/utilities/dialogs/cannot_share_empty_note_dialog.dart';
+import 'package:mynotes/utilities/dialogs/delete_dialog.dart';
 import 'package:mynotes/utilities/generics/get_arguments.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:file_picker/file_picker.dart';
@@ -75,7 +76,8 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
           _existingNote = null;
           _isCreatingNote = false; // Reset flag
         });
-      } else if ((text.isNotEmpty || title.isNotEmpty) && _existingNote != null) {
+      } else if ((text.isNotEmpty || title.isNotEmpty) &&
+          _existingNote != null) {
         // Update existing note only
         await _updateExistingNote(title, text);
       }
@@ -120,7 +122,8 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
     final title = _titleController.text.trim();
     if (text.isNotEmpty || title.isNotEmpty) {
       if (_existingNote == null) {
-        await _createNewNote(title, text); // Create only on explicit save if new
+        await _createNewNote(
+            title, text); // Create only on explicit save if new
       } else {
         await _updateExistingNote(title, text);
       }
@@ -132,16 +135,19 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
 
   Future<void> _pickFiles() async {
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(allowMultiple: true);
+      FilePickerResult? result =
+          await FilePicker.platform.pickFiles(allowMultiple: true);
       if (result != null && result.files.isNotEmpty) {
         setState(() {
-          _attachedFiles.addAll(result.files.map((file) => file.path ?? "").toList());
+          _attachedFiles
+              .addAll(result.files.map((file) => file.path ?? "").toList());
         });
         final text = _textController.text.trim();
         final title = _titleController.text.trim();
         if (text.isNotEmpty || title.isNotEmpty) {
           if (_existingNote == null) {
-            await _createNewNote(title, text); // Create only when attaching if new
+            await _createNewNote(
+                title, text); // Create only when attaching if new
           } else {
             await _updateExistingNote(title, text);
           }
@@ -157,12 +163,19 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
   }
 
   Future<void> _shareNote() async {
+    final title = _titleController.text.trim();
     final text = _textController.text.trim();
-    if (text.isEmpty) {
+    if (text.isEmpty || title.isEmpty) {
       await showCannotShareEmptyNoteDialog(context);
-    } else {
-      Share.share(text);
+      return;
     }
+    final shareContent = [
+      if (title.isNotEmpty) title,
+      if (title.isNotEmpty && text.isNotEmpty) '',
+      if (text.isNotEmpty) text,
+    ].join('\n');
+
+    Share.share(shareContent);
   }
 
   @override
@@ -172,194 +185,237 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
       builder: (context, snapshot) {
         return Scaffold(
           backgroundColor: Colors.white,
-          appBar: AppBar(
-            toolbarHeight: 0,
-            elevation: 0,
-            backgroundColor: Colors.transparent,
-          ),
-          body: SizedBox(
-            height: MediaQuery.of(context).size.height,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-                    child: Column(
+          body: Column(
+            children: [
+              // Fixed Header with Title
+              Container(
+                padding: const EdgeInsets.fromLTRB(16, 40, 16, 18),
+                color: Colors.white,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
+                        const Text(
+                          'My Note',
+                          style: TextStyle(fontSize: 28, color: Colors.black),
+                        ),
+                        Expanded(child: Container()),
+                        if (_existingNote != null)
+                          Row(
                             children: [
-                              const Text(
-                                'Note',
-                                style: TextStyle(fontSize: 16, color: Colors.black),
-                              ),
-                              Expanded(child: Container()),
-                              if (_existingNote != null)
-                                Row(
-                                  children: [
-                                    InkWell(
-                                      onTap: () async {
-                                        await _notesService.deleteNote(documentId: _existingNote!.documentId);
-                                        Navigator.pop(context);
-                                      },
-                                      child: const Icon(
-                                        Icons.delete,
-                                        color: Colors.red,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 16),
-                                  ],
-                                ),
                               InkWell(
-                                onTap: _manualSaveAndPop,
+                                onTap: () async {
+                                  final shouldDelete =
+                                      await showDeleteDialog(context);
+                                  if (shouldDelete) {
+                                    await _notesService.deleteNote(
+                                        documentId: _existingNote!.documentId);
+                                    if (mounted) {
+                                      Navigator.pop(context);
+                                    }
+                                  }
+                                },
                                 child: const Icon(
-                                  Icons.check,
-                                  color: Colors.black,
+                                  Icons.delete,
+                                  color: Colors.red,
+                                  size: 18,
                                 ),
                               ),
                               const SizedBox(width: 16),
-                              InkWell(
-                                onTap: _shareNote,
-                                child: const Icon(
-                                  Icons.share,
-                                  color: Colors.blue,
-                                ),
-                              ),
                             ],
                           ),
-                        ),
-                        Container(
-                          color: Colors.black,
-                          height: 1,
-                          margin: const EdgeInsets.symmetric(horizontal: 16),
-                        ),
-                        Container(
-                          margin: const EdgeInsets.only(top: 16),
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Row(
-                            children: [
-                              Text(
-                                _existingNote != null
-                                    ? 'Last edited: ${DateTime.now().toString().substring(0, 16)}'
-                                    : 'Created: ${DateTime.now().toString().substring(0, 16)}',
-                                style: const TextStyle(color: Colors.black, fontSize: 14),
-                              ),
-                              Expanded(child: Container()),
-                            ],
+                        InkWell(
+                          onTap: _manualSaveAndPop,
+                          child: const Icon(
+                            Icons.check,
+                            color: Colors.black,
+                            size: 18,
                           ),
                         ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: TextField(
-                            controller: _titleController,
-                            onChanged: (value) => setState(() {}),
-                            keyboardType: TextInputType.multiline,
-                            maxLines: null,
-                            style: const TextStyle(fontSize: 48, color: Colors.black),
-                            decoration: InputDecoration(
-                              hintText: 'Title',
-                              hintStyle: const TextStyle(color: Colors.black54),
-                              border: InputBorder.none,
-                            ),
-                            inputFormatters: [
-                              LengthLimitingTextInputFormatter(25),
-                            ],
+                        const SizedBox(width: 16),
+                        InkWell(
+                          onTap: _shareNote,
+                          child: const Icon(
+                            Icons.share,
+                            color: Colors.blue,
+                            size: 18,
                           ),
                         ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                          child: TextField(
-                            controller: _textController,
-                            onChanged: (value) => setState(() {}),
-                            keyboardType: TextInputType.multiline,
-                            maxLines: null,
-                            style: const TextStyle(fontSize: 14, color: Colors.black54),
-                            decoration: InputDecoration(
-                              hintText: context.loc.start_typing_your_note,
-                              hintStyle: const TextStyle(color: Colors.black54),
-                              border: InputBorder.none,
-                            ),
-                            inputFormatters: [
-                              LengthLimitingTextInputFormatter(70),
-                            ],
-                          ),
-                        ),
-                        if (_attachedFiles.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                            child: SizedBox(
-                              height: 80,
-                              child: ListView.builder(
-                                scrollDirection: Axis.horizontal,
-                                itemCount: _attachedFiles.length,
-                                itemBuilder: (context, index) {
-                                  final filePath = _attachedFiles[index];
-                                  final fileName = filePath.split('/').last;
-                                  return Padding(
-                                    padding: const EdgeInsets.only(right: 8.0),
-                                    child: GestureDetector(
-                                      onTap: () => _openFile(filePath),
-                                      child: Chip(
-                                        label: Text(
-                                          fileName,
-                                          style: const TextStyle(
-                                            color: Color.fromRGBO(31, 41, 55, 1),
-                                          ),
-                                        ),
-                                        backgroundColor: accentColor.withOpacity(0.8),
-                                        elevation: 1,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                          ),
                       ],
                     ),
-                  ),
+                    const SizedBox(height: 10),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 20),
+                      child: Divider(
+                        color: Colors.black,
+                        thickness: 1,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: _titleController,
+                      onChanged: (value) => setState(() {}),
+                      keyboardType: TextInputType.multiline,
+                      maxLines: null,
+                      style: const TextStyle(fontSize: 26, color: Colors.black),
+                      decoration: InputDecoration(
+                        hintText: 'Title',
+                        hintStyle: const TextStyle(color: Colors.black54),
+                        border: InputBorder.none,
+                      ),
+                      inputFormatters: [
+                        LengthLimitingTextInputFormatter(100),
+                      ],
+                    ),
+                  ],
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              ),
+              // Scrollable Content
+              Expanded(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(
+                      parent: AlwaysScrollableScrollPhysics()),
+                  child: Column(
                     children: [
-                      TextButton(
-                        onPressed: _pickFiles,
-                        style: TextButton.styleFrom(
-                          foregroundColor: Colors.blue,
-                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
+                      Container(
+                        margin: const EdgeInsets.only(top: 16),
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Row(
                           children: [
-                            Icon(Icons.attach_file, size: 20),
-                            SizedBox(width: 8),
                             Text(
-                              'Attach Files',
-                              style: TextStyle(fontSize: 16),
+                              _existingNote != null
+                                  ? 'Last edited: ${_existingNote!.updatedAt.toString().substring(0, 16)}'
+                                  : 'Created: ${DateTime.now().toString().substring(0, 16)}',
+                              style: const TextStyle(
+                                  color: Colors.black, fontSize: 14),
                             ),
+                            Expanded(child: Container()),
                           ],
                         ),
                       ),
-                      Text(
-                        '${_textController.text.length} characters',
-                        style: const TextStyle(
-                          color: Colors.black54,
-                          fontSize: 12,
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 16),
+                        child: SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.3,
+                          child: Scrollbar(
+                            thumbVisibility: true,
+                            thickness: 4,
+                            radius: const Radius.circular(2),
+                            child: SingleChildScrollView(
+                              physics: const BouncingScrollPhysics(),
+                              child: TextField(
+                                controller: _textController,
+                                onChanged: (value) => setState(() {}),
+                                keyboardType: TextInputType.multiline,
+                                maxLines: null,
+                                style: const TextStyle(
+                                    fontSize: 14, color: Colors.black54),
+                                decoration: InputDecoration(
+                                  hintText: context.loc.start_typing_your_note,
+                                  hintStyle:
+                                      const TextStyle(color: Colors.black54),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: const BorderSide(
+                                        color: Colors.transparent, width: 1),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: const BorderSide(
+                                        color: Colors.transparent, width: 1),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: const BorderSide(
+                                        color: Colors.transparent, width: 1),
+                                  ),
+                                ),
+                                inputFormatters: [
+                                  LengthLimitingTextInputFormatter(70),
+                                ],
+                              ),
+                            ),
+                          ),
                         ),
                       ),
+                      if (_attachedFiles.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: SizedBox(
+                            height: 80,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: _attachedFiles.length,
+                              itemBuilder: (context, index) {
+                                final filePath = _attachedFiles[index];
+                                final fileName = filePath.split('/').last;
+                                return Padding(
+                                  padding: const EdgeInsets.only(right: 8.0),
+                                  child: GestureDetector(
+                                    onTap: () => _openFile(filePath),
+                                    child: Chip(
+                                      label: Text(
+                                        fileName,
+                                        style: const TextStyle(
+                                          color: Color.fromRGBO(31, 41, 55, 1),
+                                        ),
+                                      ),
+                                      backgroundColor:
+                                          accentColor.withOpacity(0.8),
+                                      elevation: 1,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),
-              ],
-            ),
+              ),
+              // Fixed Footer
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0, vertical: 16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    TextButton(
+                      onPressed: _pickFiles,
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.blue,
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.attach_file, size: 16),
+                          SizedBox(width: 8),
+                          Text(
+                            'Attach Files',
+                            style: TextStyle(fontSize: 16),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Text(
+                      '${_textController.text.length} characters',
+                      style: const TextStyle(
+                        color: Colors.black54,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         );
       },
