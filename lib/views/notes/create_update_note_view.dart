@@ -24,11 +24,12 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
   late final FirebaseCloudStorage _notesService;
   late final TextEditingController _textController;
   late final TextEditingController _titleController;
+  late final FocusNode _titleFocusNode;
+  late final FocusNode _textFocusNode;
   List<String> _attachedFiles = [];
   Timer? _debounceTimer;
-  bool _isCreatingNote = false; // Added: Flag to prevent multiple creations
+  bool _isCreatingNote = false;
 
-  static const Color backgroundColor = Color.fromRGBO(249, 250, 251, 1);
   static Color accentColor = Colors.grey.shade300;
 
   @override
@@ -37,6 +38,8 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
     _notesService = FirebaseCloudStorage();
     _textController = TextEditingController();
     _titleController = TextEditingController();
+    _titleFocusNode = FocusNode();
+    _textFocusNode = FocusNode();
     _textController.addListener(_handleTextChanged);
     _titleController.addListener(_handleTextChanged);
   }
@@ -48,6 +51,8 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
     _titleController.removeListener(_handleTextChanged);
     _textController.dispose();
     _titleController.dispose();
+    _titleFocusNode.dispose();
+    _textFocusNode.dispose();
     super.dispose();
   }
 
@@ -70,24 +75,21 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
       final title = _titleController.text.trim();
 
       if (text.isEmpty && title.isEmpty && _existingNote != null) {
-        // Delete note if both text and title are empty
         await _notesService.deleteNote(documentId: _existingNote!.documentId);
         setState(() {
           _existingNote = null;
-          _isCreatingNote = false; // Reset flag
+          _isCreatingNote = false;
         });
       } else if ((text.isNotEmpty || title.isNotEmpty) &&
           _existingNote != null) {
-        // Update existing note only
         await _updateExistingNote(title, text);
       }
-      // Note creation is now handled manually or on first save, not here
     });
   }
 
   Future<void> _createNewNote(String title, String text) async {
-    if (_isCreatingNote) return; // Prevent multiple creations
-    setState(() => _isCreatingNote = true); // Set flag
+    if (_isCreatingNote) return;
+    setState(() => _isCreatingNote = true);
 
     final currentUser = AuthService.firebase().currentUser!;
     final newNote = await _notesService.createNewNote(
@@ -96,8 +98,8 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
       title: title,
     );
     setState(() {
-      _existingNote = newNote; // Set immediately
-      _isCreatingNote = false; // Reset flag after creation
+      _existingNote = newNote;
+      _isCreatingNote = false;
     });
     await _notesService.updateNoteWithAttachments(
       documentId: newNote.documentId,
@@ -122,8 +124,7 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
     final title = _titleController.text.trim();
     if (text.isNotEmpty || title.isNotEmpty) {
       if (_existingNote == null) {
-        await _createNewNote(
-            title, text); // Create only on explicit save if new
+        await _createNewNote(title, text);
       } else {
         await _updateExistingNote(title, text);
       }
@@ -146,8 +147,7 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
         final title = _titleController.text.trim();
         if (text.isNotEmpty || title.isNotEmpty) {
           if (_existingNote == null) {
-            await _createNewNote(
-                title, text); // Create only when attaching if new
+            await _createNewNote(title, text);
           } else {
             await _updateExistingNote(title, text);
           }
@@ -178,241 +178,278 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
     Share.share(shareContent);
   }
 
-  @override
+@override
   Widget build(BuildContext context) {
     return FutureBuilder(
       future: _loadNoteIfEditing(context),
       builder: (context, snapshot) {
         return Scaffold(
+          resizeToAvoidBottomInset: false, // Manual control for keyboard
           backgroundColor: Colors.white,
-          body: Column(
+          body: Stack(
             children: [
-              // Fixed Header with Title
-              Container(
-                padding: const EdgeInsets.fromLTRB(16, 40, 16, 18),
-                color: Colors.white,
+              // Scrollable content (header, text area, attachments)
+              SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.only(bottom: 60.0), // Space for footer
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        const Text(
-                          'My Note',
-                          style: TextStyle(fontSize: 28, color: Colors.black),
-                        ),
-                        Expanded(child: Container()),
-                        if (_existingNote != null)
+                    // Header
+                    Container(
+                      padding: const EdgeInsets.fromLTRB(16, 40, 16, 18),
+                      color: Colors.white,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                           Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
+                              const Text(
+                                'My Note',
+                                style: TextStyle(fontSize: 28, color: Colors.black),
+                              ),
+                              Expanded(child: Container()),
+                              if (_existingNote != null)
+                                Row(
+                                  children: [
+                                    InkWell(
+                                      onTap: () async {
+                                        final shouldDelete = await showDeleteDialog(context);
+                                        if (shouldDelete) {
+                                          await _notesService.deleteNote(documentId: _existingNote!.documentId);
+                                          if (mounted) {
+                                            Navigator.pop(context);
+                                          }
+                                        }
+                                      },
+                                      child: const Icon(
+                                        Icons.delete,
+                                        color: Colors.red,
+                                        size: 18,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                  ],
+                                ),
                               InkWell(
-                                onTap: () async {
-                                  final shouldDelete =
-                                      await showDeleteDialog(context);
-                                  if (shouldDelete) {
-                                    await _notesService.deleteNote(
-                                        documentId: _existingNote!.documentId);
-                                    if (mounted) {
-                                      Navigator.pop(context);
-                                    }
-                                  }
-                                },
+                                onTap: _manualSaveAndPop,
                                 child: const Icon(
-                                  Icons.delete,
-                                  color: Colors.red,
+                                  Icons.save_as_outlined,
+                                  color: Colors.black,
                                   size: 18,
                                 ),
                               ),
                               const SizedBox(width: 16),
+                              InkWell(
+                                onTap: _shareNote,
+                                child: const Icon(
+                                  Icons.share,
+                                  color: Colors.blue,
+                                  size: 18,
+                                ),
+                              ),
                             ],
                           ),
-                        InkWell(
-                          onTap: _manualSaveAndPop,
-                          child: const Icon(
-                            Icons.check,
-                            color: Colors.black,
-                            size: 18,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        InkWell(
-                          onTap: _shareNote,
-                          child: const Icon(
-                            Icons.share,
-                            color: Colors.blue,
-                            size: 18,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 20),
-                      child: Divider(
-                        color: Colors.black,
-                        thickness: 1,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    TextField(
-                      controller: _titleController,
-                      onChanged: (value) => setState(() {}),
-                      keyboardType: TextInputType.multiline,
-                      maxLines: null,
-                      style: const TextStyle(fontSize: 26, color: Colors.black),
-                      decoration: InputDecoration(
-                        hintText: 'Title',
-                        hintStyle: const TextStyle(color: Colors.black54),
-                        border: InputBorder.none,
-                      ),
-                      inputFormatters: [
-                        LengthLimitingTextInputFormatter(100),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              // Scrollable Content
-              Expanded(
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(
-                      parent: AlwaysScrollableScrollPhysics()),
-                  child: Column(
-                    children: [
-                      Container(
-                        margin: const EdgeInsets.only(top: 16),
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Row(
-                          children: [
-                            Text(
-                              _existingNote != null
-                                  ? 'Last edited: ${_existingNote!.updatedAt.toString().substring(0, 16)}'
-                                  : 'Created: ${DateTime.now().toString().substring(0, 16)}',
-                              style: const TextStyle(
-                                  color: Colors.black, fontSize: 14),
-                            ),
-                            Expanded(child: Container()),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 16),
-                        child: SizedBox(
-                          height: MediaQuery.of(context).size.height * 0.3,
-                          child: Scrollbar(
-                            thumbVisibility: true,
-                            thickness: 4,
-                            radius: const Radius.circular(2),
-                            child: SingleChildScrollView(
-                              physics: const BouncingScrollPhysics(),
-                              child: TextField(
-                                controller: _textController,
-                                onChanged: (value) => setState(() {}),
-                                keyboardType: TextInputType.multiline,
-                                maxLines: null,
-                                style: const TextStyle(
-                                    fontSize: 14, color: Colors.black54),
-                                decoration: InputDecoration(
-                                  hintText: context.loc.start_typing_your_note,
-                                  hintStyle:
-                                      const TextStyle(color: Colors.black54),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    borderSide: const BorderSide(
-                                        color: Colors.transparent, width: 1),
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    borderSide: const BorderSide(
-                                        color: Colors.transparent, width: 1),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    borderSide: const BorderSide(
-                                        color: Colors.transparent, width: 1),
-                                  ),
-                                ),
-                                inputFormatters: [
-                                  LengthLimitingTextInputFormatter(70),
-                                ],
-                              ),
+                          const SizedBox(height: 10),
+                          const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 20),
+                            child: Divider(
+                              color: Colors.black,
+                              thickness: 1,
                             ),
                           ),
-                        ),
-                      ),
-                      if (_attachedFiles.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                          child: SizedBox(
-                            height: 80,
-                            child: ListView.builder(
-                              scrollDirection: Axis.horizontal,
-                              itemCount: _attachedFiles.length,
-                              itemBuilder: (context, index) {
-                                final filePath = _attachedFiles[index];
-                                final fileName = filePath.split('/').last;
-                                return Padding(
-                                  padding: const EdgeInsets.only(right: 8.0),
-                                  child: GestureDetector(
-                                    onTap: () => _openFile(filePath),
-                                    child: Chip(
-                                      label: Text(
-                                        fileName,
-                                        style: const TextStyle(
-                                          color: Color.fromRGBO(31, 41, 55, 1),
-                                        ),
-                                      ),
-                                      backgroundColor:
-                                          accentColor.withOpacity(0.8),
-                                      elevation: 1,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
+                          const SizedBox(height: 10),
+                          TextField(
+                            controller: _titleController,
+                            focusNode: _titleFocusNode,
+                            onChanged: (value) => setState(() {}),
+                            keyboardType: TextInputType.multiline,
+                            maxLines: null,
+                            textInputAction: TextInputAction.next,
+                            onSubmitted: (value) {
+                              FocusScope.of(context).requestFocus(_textFocusNode);
+                            },
+                            style: const TextStyle(fontSize: 26, color: Colors.black),
+                            decoration: InputDecoration(
+                              hintText: 'Title',
+                              hintStyle: const TextStyle(color: Colors.black54),
+                              border: InputBorder.none,
                             ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-              // Fixed Footer
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 16.0, vertical: 16.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    TextButton(
-                      onPressed: _pickFiles,
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.blue,
-                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.attach_file, size: 16),
-                          SizedBox(width: 8),
-                          Text(
-                            'Attach Files',
-                            style: TextStyle(fontSize: 16),
+                            inputFormatters: [
+                              LengthLimitingTextInputFormatter(100),
+                            ],
                           ),
                         ],
                       ),
                     ),
-                    Text(
-                      '${_textController.text.length} characters',
-                      style: const TextStyle(
-                        color: Colors.black54,
-                        fontSize: 12,
+                    // Middle Section (Text Area)
+                    SizedBox(
+                      height: MediaQuery.of(context).size.height * 0.65,
+                      child: Stack(
+                        children: [
+                          _textController.text.isEmpty
+                              ? Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                  child: TextField(
+                                    controller: _textController,
+                                    focusNode: _textFocusNode,
+                                    onChanged: (value) => setState(() {}),
+                                    keyboardType: TextInputType.multiline,
+                                    maxLines: null,
+                                    style: const TextStyle(fontSize: 14, color: Colors.black54),
+                                    decoration: InputDecoration(
+                                      hintText: context.loc.start_typing_your_note,
+                                      hintStyle: const TextStyle(color: Colors.black54),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                        borderSide: const BorderSide(color: Colors.transparent, width: 1),
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                        borderSide: const BorderSide(color: Colors.transparent, width: 1),
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                        borderSide: const BorderSide(color: Colors.transparent, width: 1),
+                                      ),
+                                    ),
+                                  ),
+                                )
+                              : SingleChildScrollView(
+                                  physics: const BouncingScrollPhysics(),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                    child: Scrollbar(
+                                      thumbVisibility: true,
+                                      thickness: 4,
+                                      radius: const Radius.circular(2),
+                                      child: TextField(
+                                        controller: _textController,
+                                        focusNode: _textFocusNode,
+                                        onChanged: (value) => setState(() {}),
+                                        keyboardType: TextInputType.multiline,
+                                        maxLines: null,
+                                        style: const TextStyle(fontSize: 14, color: Colors.black54),
+                                        decoration: InputDecoration(
+                                          hintText: context.loc.start_typing_your_note,
+                                          hintStyle: const TextStyle(color: Colors.black54),
+                                          border: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(8),
+                                            borderSide: const BorderSide(color: Colors.transparent, width: 1),
+                                          ),
+                                          enabledBorder: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(8),
+                                            borderSide: const BorderSide(color: Colors.transparent, width: 1),
+                                          ),
+                                          focusedBorder: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(8),
+                                            borderSide: const BorderSide(color: Colors.transparent, width: 1),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                          Positioned(
+                            left: 24,
+                            right: 0,
+                            bottom: 0,
+                            child: Container(
+                              color: Colors.white.withOpacity(0.9),
+                              padding: const EdgeInsets.symmetric(vertical: 4),
+                              child: Row(
+                                children: [
+                                  Text(
+                                    _existingNote != null
+                                        ? 'Last edited: ${_existingNote!.updatedAt.toString().substring(0, 16)}'
+                                        : 'Created: ${DateTime.now().toString().substring(0, 16)}',
+                                    style: const TextStyle(color: Colors.black12, fontSize: 14),
+                                  ),
+                                  Expanded(child: Container()),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
+                    // Attachments Section
+                    if (_attachedFiles.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: SizedBox(
+                          height: 80,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: _attachedFiles.length,
+                            itemBuilder: (context, index) {
+                              final filePath = _attachedFiles[index];
+                              final fileName = filePath.split('/').last;
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 8.0),
+                                child: GestureDetector(
+                                  onTap: () => _openFile(filePath),
+                                  child: Chip(
+                                    label: Text(
+                                      fileName,
+                                      style: const TextStyle(
+                                        color: Color.fromRGBO(31, 41, 55, 1),
+                                      ),
+                                    ),
+                                    backgroundColor: accentColor.withOpacity(0.8),
+                                    elevation: 1,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
                   ],
+                ),
+              ),
+              // Footer (pushed up with keyboard)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: MediaQuery.of(context).viewInsets.bottom - 20.0, // Moves up by keyboard height
+                child: Container(
+                  color: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      TextButton(
+                        onPressed: _pickFiles,
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.blue,
+                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.attach_file, size: 16),
+                            SizedBox(width: 8),
+                            Text(
+                              'Attach',
+                              style: TextStyle(fontSize: 16),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Text(
+                        '${_textController.text.length} characters',
+                        style: const TextStyle(
+                          color: Colors.black54,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -422,3 +459,4 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
     );
   }
 }
+

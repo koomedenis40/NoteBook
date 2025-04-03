@@ -26,12 +26,8 @@ class NotesView extends StatefulWidget {
 class _NotesViewState extends State<NotesView> {
   late final FirebaseCloudStorage _notesService;
   late SortCriterion _sortCriterion;
-
-  // Layout toggle: grid vs list
-  bool _isGridView = true;
-
-  // Index for bottom navigation: 0=All, 1=Pinned, 2=Private
-  int _currentIndex = 0;
+  bool _isGridView = true; // Grid view by default
+  int _currentIndex = 0; // Bottom navigation index
 
   String get userId => AuthService.firebase().currentUser!.id;
 
@@ -46,10 +42,6 @@ class _NotesViewState extends State<NotesView> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
-
-      // -------------------------
-      // APP BAR
-      // -------------------------
       appBar: AppBar(
         backgroundColor: Colors.grey.shade300,
         title: StreamBuilder(
@@ -72,7 +64,7 @@ class _NotesViewState extends State<NotesView> {
           },
         ),
         actions: [
-          // 1) Toggle Grid/List
+          // Toggle Grid/List
           IconButton(
             icon: Icon(
               _isGridView ? Icons.view_list : Icons.grid_view,
@@ -81,16 +73,13 @@ class _NotesViewState extends State<NotesView> {
             onPressed: () {
               setState(() {
                 _isGridView = !_isGridView;
+                debugPrint('Toggled to ${_isGridView ? "Grid" : "List"}');
               });
             },
           ),
-
-          // 2) Sort popup (with a sort icon)
+          // Sort popup
           PopupMenuButton<String>(
-            icon: const Icon(
-              Icons.sort,
-              color: Colors.black,
-            ),
+            icon: const Icon(Icons.sort, color: Colors.black),
             onSelected: (value) {
               setState(() {
                 if (value == 'Sort by Created') {
@@ -103,38 +92,21 @@ class _NotesViewState extends State<NotesView> {
               });
             },
             itemBuilder: (BuildContext context) => [
-              const PopupMenuItem(
-                value: 'Sort by Created',
-                child: Text('Sort by Created'),
-              ),
-              const PopupMenuItem(
-                value: 'Sort by Updated',
-                child: Text('Sort by Updated'),
-              ),
-              const PopupMenuItem(
-                value: 'Sort by Name',
-                child: Text('Sort by Name'),
-              ),
+              const PopupMenuItem(value: 'Sort by Created', child: Text('Sort by Created')),
+              const PopupMenuItem(value: 'Sort by Updated', child: Text('Sort by Updated')),
+              const PopupMenuItem(value: 'Sort by Name', child: Text('Sort by Name')),
             ],
           ),
-
-          // 3) Add Note
+          // Add Note
           IconButton(
             onPressed: () {
               Navigator.of(context).pushNamed(createOrUpdateNoteRoute);
             },
-            icon: const Icon(
-              Icons.add,
-              color: Colors.black,
-            ),
+            icon: const Icon(Icons.add, color: Colors.black),
           ),
-
-          // 4) Logout popup
+          // Logout popup
           PopupMenuButton<MenuAction>(
-            icon: const Icon(
-              Icons.more_vert,
-              color: Colors.black,
-            ),
+            icon: const Icon(Icons.more_vert, color: Colors.black),
             onSelected: (value) async {
               switch (value) {
                 case MenuAction.logout:
@@ -156,11 +128,6 @@ class _NotesViewState extends State<NotesView> {
           ),
         ],
       ),
-
-      // -------------------------
-      // BODY: we display the appropriate subset of notes
-      // based on _currentIndex
-      // -------------------------
       body: SafeArea(
         child: Column(
           children: [
@@ -173,27 +140,24 @@ class _NotesViewState extends State<NotesView> {
                     case ConnectionState.active:
                       if (snapshot.hasData) {
                         final allNotes = snapshot.data as Iterable<CloudNote>;
-                        // Filter the notes based on _currentIndex
                         final filtered = _filterNotesByIndex(allNotes);
-
                         if (filtered.isEmpty) {
                           return const Center(
                             child: Text(
                               "No notes yet, tap + to create one!",
-                              style:
-                                  TextStyle(color:Color.fromRGBO(31, 41, 55, 1), fontSize: 16),
+                              style: TextStyle(
+                                color: Color.fromRGBO(31, 41, 55, 1),
+                                fontSize: 16,
+                              ),
                             ),
                           );
                         }
-                        // sort pinned first, then sort by _sortCriterion
                         final sorted = _sortAndPin(filtered);
-
                         return NotesListView(
                           notes: sorted,
-                          isGridView: _isGridView,
+                          isGridView: _isGridView,     
                           onDeleteNote: (note) async {
-                            await _notesService.deleteNote(
-                                documentId: note.documentId);
+                            await _notesService.deleteNote(documentId: note.documentId);
                           },
                           onTap: (note) {
                             Navigator.of(context).pushNamed(
@@ -221,20 +185,13 @@ class _NotesViewState extends State<NotesView> {
           ],
         ),
       ),
-
-      // -------------------------
-      // BOTTOM NAVIGATION BAR
-      // -------------------------
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            height: 1,
-            color: Colors.white10,
-          ),
+          Container(height: 1, color: Colors.white10),
           BottomNavigationBar(
             currentIndex: _currentIndex,
-            backgroundColor:  Colors.grey.shade300,
+            backgroundColor: Colors.grey.shade300,
             unselectedItemColor: Colors.black,
             selectedItemColor: Colors.white,
             onTap: (newIndex) {
@@ -243,18 +200,9 @@ class _NotesViewState extends State<NotesView> {
               });
             },
             items: const [
-              BottomNavigationBarItem(
-                icon: Icon(Icons.notes),
-                label: 'All Notes',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.push_pin),
-                label: 'Pinned Notes',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.lock),
-                label: 'Private Notes',
-              ),
+              BottomNavigationBarItem(icon: Icon(Icons.notes), label: 'All Notes'),
+              BottomNavigationBarItem(icon: Icon(Icons.push_pin), label: 'Pinned Notes'),
+              BottomNavigationBarItem(icon: Icon(Icons.lock), label: 'Private Notes'),
             ],
           ),
         ],
@@ -262,26 +210,17 @@ class _NotesViewState extends State<NotesView> {
     );
   }
 
-  // Decide how to filter notes based on bottom nav index
-  // 0 => All (non-private)
-  // 1 => pinned & non-private
-  // 2 => private
   Iterable<CloudNote> _filterNotesByIndex(Iterable<CloudNote> allNotes) {
     switch (_currentIndex) {
       case 1:
-        // pinned & not private
         return allNotes.where((n) => n.pinned && !n.isPrivate);
       case 2:
-        // isPrivate
         return allNotes.where((n) => n.isPrivate);
       default:
-        // index=0 => non-private (includes pinned & unpinned)
-        return allNotes.where((n) => !n.isPrivate);
+        return allNotes.where((n) => !n.pinned && !n.isPrivate);
     }
   }
 
-  // We separate pinned from unpinned, then sort each group
-  // using _compareNotes, and place pinned group first
   List<CloudNote> _sortAndPin(Iterable<CloudNote> notes) {
     final pinnedNotes = notes.where((n) => n.pinned).toList();
     final unpinnedNotes = notes.where((n) => !n.pinned).toList();
@@ -290,14 +229,11 @@ class _NotesViewState extends State<NotesView> {
     return [...pinnedNotes, ...unpinnedNotes];
   }
 
-  // Sort by created/updated/name
   int _compareNotes(CloudNote a, CloudNote b) {
     switch (_sortCriterion) {
       case SortCriterion.dateCreated:
-        // Newest first
         return b.createdAt.compareTo(a.createdAt);
       case SortCriterion.dateUpdated:
-        // Newest first
         return b.updatedAt.compareTo(a.updatedAt);
       case SortCriterion.name:
         return a.text.toLowerCase().compareTo(b.text.toLowerCase());
