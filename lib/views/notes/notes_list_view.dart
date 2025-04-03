@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:mynotes/services/cloud/cloud_note.dart';
 import 'package:mynotes/utilities/dialogs/delete_dialog.dart';
+import 'package:mynotes/views/notes/private_view.dart';
+import 'package:mynotes/utilities/dialogs/password_dialogs.dart';
 
 typedef NoteCallback = void Function(CloudNote note);
 
@@ -10,7 +12,7 @@ class NotesListView extends StatelessWidget {
   final NoteCallback onTap;
   final NoteCallback onTogglePin;
   final bool isGridView;
-  
+  final int currentIndex;
 
   const NotesListView({
     super.key,
@@ -19,7 +21,7 @@ class NotesListView extends StatelessWidget {
     required this.onTap,
     required this.onTogglePin,
     required this.isGridView,
-     
+    required this.currentIndex,
   });
 
   @override
@@ -102,11 +104,11 @@ class NotesListView extends StatelessWidget {
                       style:
                           TextStyle(fontSize: 14, color: Colors.grey.shade600),
                     ),
-                    const SizedBox(width: 16),  // Add spacing before timestamp
-                  Text(
-                    "Created: ${_formattedDate(note, updated: false)}", // Use createdAt
-                    style: const TextStyle(color: Colors.grey, fontSize: 12),
-                  ),
+                    const SizedBox(width: 16), // Add spacing before timestamp
+                    Text(
+                      "Created: ${_formattedDate(note, updated: false)}", // Use createdAt
+                      style: const TextStyle(color: Colors.grey, fontSize: 12),
+                    ),
                   ],
                 ),
               ),
@@ -119,6 +121,8 @@ class NotesListView extends StatelessWidget {
 
   Widget _buildNoteCard(BuildContext context, CloudNote note,
       {bool isList = false}) {
+    final privateManager = PrivateNotesManager();
+
     return IntrinsicHeight(
       child: GestureDetector(
         onTap: () => onTap(note),
@@ -189,10 +193,34 @@ class NotesListView extends StatelessWidget {
                       },
                     ),
                     _buildIcon(
-                      icon: Icons.lock_outline,
+                      icon:
+                          note.isPrivate ? Icons.lock_open : Icons.lock_outline,
                       color: Colors.blue,
-                      onPressed: () {
-                        // TODO: Lock note
+                      onPressed: () async {
+                        final successs = await privateManager.togglePrivacy(
+                          note: note,
+                          onSuccess: () {
+                            // Refresh UI
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(note.isPrivate
+                                    ? 'Note Unlocked'
+                                    : 'Note Locked'),
+                              ),
+                            );
+                          },
+                           onSetPassword: (docId, text, isPrivate) => showSetPasswordDialog(context, privateManager),
+                          onVerifyPassword: (title) => showVerifyPasswordDialog(context, privateManager, title: title),
+                          onRecoverPassword: privateManager.recoverPassword,
+                        );
+
+                        if (!successs && context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Action Failed'),
+                            ),
+                          );
+                        }
                       },
                     ),
                   ],
@@ -223,47 +251,47 @@ class NotesListView extends StatelessWidget {
     );
   }
 
-String _formattedDate(CloudNote note, {bool updated = false}) {
-  final date = updated ? note.updatedAt : note.createdAt;
+  String _formattedDate(CloudNote note, {bool updated = false}) {
+    final date = updated ? note.updatedAt : note.createdAt;
 
-  final now = DateTime.now();
-  final difference = now.difference(date);
+    final now = DateTime.now();
+    final difference = now.difference(date);
 
-  // Less than 12 hours: Show time (e.g., "2:30 PM")
-  if (difference.inHours < 12) {
-    final hour = date.hour % 12 == 0 ? 12 : date.hour % 12;
-    final minute = date.minute.toString().padLeft(2, '0');
-    final period = date.hour < 12 ? 'AM' : 'PM';
-    return "$hour:$minute $period";
+    // Less than 12 hours: Show time (e.g., "2:30 PM")
+    if (difference.inHours < 12) {
+      final hour = date.hour % 12 == 0 ? 12 : date.hour % 12;
+      final minute = date.minute.toString().padLeft(2, '0');
+      final period = date.hour < 12 ? 'AM' : 'PM';
+      return "$hour:$minute $period";
+    }
+    // Less than 24 hours: "Today"
+    else if (difference.inHours < 24) {
+      return "Today";
+    }
+    // 24–48 hours: "Yesterday"
+    else if (difference.inHours < 48) {
+      return "Yesterday";
+    }
+    // 2–6 days: "X days ago"
+    else if (difference.inDays < 7) {
+      return "${difference.inDays} days ago";
+    }
+    // 7–13 days: "Last week"
+    else if (difference.inDays < 14) {
+      return "Last week";
+    }
+    // 14–30 days: "Last month"
+    else if (difference.inDays < 31) {
+      return "Last month";
+    }
+    // 31–365 days: "Last year"
+    else if (difference.inDays < 366) {
+      return "Last year";
+    }
+    // Over a year: Full date
+    else {
+      return "${date.year}-${date.month.toString().padLeft(2, '0')}-"
+          "${date.day.toString().padLeft(2, '0')}";
+    }
   }
-  // Less than 24 hours: "Today"
-  else if (difference.inHours < 24) {
-    return "Today";
-  }
-  // 24–48 hours: "Yesterday"
-  else if (difference.inHours < 48) {
-    return "Yesterday";
-  }
-  // 2–6 days: "X days ago"
-  else if (difference.inDays < 7) {
-    return "${difference.inDays} days ago";
-  }
-  // 7–13 days: "Last week"
-  else if (difference.inDays < 14) {
-    return "Last week";
-  }
-  // 14–30 days: "Last month"
-  else if (difference.inDays < 31) {
-    return "Last month";
-  }
-  // 31–365 days: "Last year"
-  else if (difference.inDays < 366) {
-    return "Last year";
-  }
-  // Over a year: Full date
-  else {
-    return "${date.year}-${date.month.toString().padLeft(2, '0')}-"
-        "${date.day.toString().padLeft(2, '0')}";
-  }
-}
 }

@@ -9,8 +9,11 @@ import 'package:mynotes/services/auth/bloc/auth_event.dart';
 import 'package:mynotes/services/cloud/cloud_note.dart';
 import 'package:mynotes/services/cloud/firebase_cloud_storage.dart';
 import 'package:mynotes/utilities/dialogs/logout_dialog.dart';
+import 'package:mynotes/views/notes/note_filter.dart';
 import 'package:mynotes/views/notes/notes_list_view.dart';
 import 'package:mynotes/enum/selection_action.dart';
+import 'package:mynotes/views/notes/private_view.dart';
+import 'package:mynotes/utilities/dialogs/password_dialogs.dart';
 
 extension Count<T extends Iterable> on Stream {
   Stream<int> get getLength => map((event) => event.length);
@@ -29,6 +32,9 @@ class _NotesViewState extends State<NotesView> {
   bool _isGridView = true; // Grid view by default
   int _currentIndex = 0; // Bottom navigation index
 
+  final PrivateNotesManager _privateManager = PrivateNotesManager();
+  bool _isPrivateAuthenticated = false;
+
   String get userId => AuthService.firebase().currentUser!.id;
 
   @override
@@ -40,6 +46,8 @@ class _NotesViewState extends State<NotesView> {
 
   @override
   Widget build(BuildContext context) {
+    final noteFilter = NoteFilter(_currentIndex);
+
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
       appBar: AppBar(
@@ -92,9 +100,12 @@ class _NotesViewState extends State<NotesView> {
               });
             },
             itemBuilder: (BuildContext context) => [
-              const PopupMenuItem(value: 'Sort by Created', child: Text('Sort by Created')),
-              const PopupMenuItem(value: 'Sort by Updated', child: Text('Sort by Updated')),
-              const PopupMenuItem(value: 'Sort by Name', child: Text('Sort by Name')),
+              const PopupMenuItem(
+                  value: 'Sort by Created', child: Text('Sort by Created')),
+              const PopupMenuItem(
+                  value: 'Sort by Updated', child: Text('Sort by Updated')),
+              const PopupMenuItem(
+                  value: 'Sort by Name', child: Text('Sort by Name')),
             ],
           ),
           // Add Note
@@ -140,7 +151,7 @@ class _NotesViewState extends State<NotesView> {
                     case ConnectionState.active:
                       if (snapshot.hasData) {
                         final allNotes = snapshot.data as Iterable<CloudNote>;
-                        final filtered = _filterNotesByIndex(allNotes);
+                        final filtered = noteFilter.filterNotes(allNotes);
                         if (filtered.isEmpty) {
                           return const Center(
                             child: Text(
@@ -155,9 +166,11 @@ class _NotesViewState extends State<NotesView> {
                         final sorted = _sortAndPin(filtered);
                         return NotesListView(
                           notes: sorted,
-                          isGridView: _isGridView,     
+                          isGridView: _isGridView,
+                          currentIndex: _currentIndex,
                           onDeleteNote: (note) async {
-                            await _notesService.deleteNote(documentId: note.documentId);
+                            await _notesService.deleteNote(
+                                documentId: note.documentId);
                           },
                           onTap: (note) {
                             Navigator.of(context).pushNamed(
@@ -194,31 +207,65 @@ class _NotesViewState extends State<NotesView> {
             backgroundColor: Colors.grey.shade300,
             unselectedItemColor: Colors.black,
             selectedItemColor: Colors.white,
-            onTap: (newIndex) {
+            onTap: (newIndex) async {
+// In NotesView’s BottomNavigationBar onTap:
+              if (newIndex == 2) {
+                final hasPass = await _privateManager.hasPassword();
+                debugPrint(
+                    'Switching to Private Notes, has password: $hasPass, authenticated: $_isPrivateAuthenticated');
+
+                if (_currentIndex == 2 && _isPrivateAuthenticated) {
+                  debugPrint(
+                      'Already in Private Notes and authenticated, skipping prompt');
+                  return;
+                }
+
+                if (hasPass && !_isPrivateAuthenticated) {
+                  final isValid = await showVerifyPasswordDialog(
+                      context, _privateManager,
+                      title: 'Unlock Private Notes');
+                  if (!isValid && mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Incorrect password')),
+                    );
+                    return;
+                  } else {
+                    _isPrivateAuthenticated = true;
+                  }
+                } else if (!hasPass) {
+                  final success =
+                      await showSetPasswordDialog(context, _privateManager);
+                  if (!success && mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Password not set')),
+                    );
+                    return;
+                  } else {
+                    _isPrivateAuthenticated = true;
+                  }
+                }
+              } else {
+                if (_currentIndex == 2) {
+                  _isPrivateAuthenticated = false;
+                  debugPrint('Leaving Private Notes, reset authentication');
+                }
+              }
               setState(() {
                 _currentIndex = newIndex;
               });
             },
             items: const [
-              BottomNavigationBarItem(icon: Icon(Icons.notes), label: 'All Notes'),
-              BottomNavigationBarItem(icon: Icon(Icons.push_pin), label: 'Pinned Notes'),
-              BottomNavigationBarItem(icon: Icon(Icons.lock), label: 'Private Notes'),
+              BottomNavigationBarItem(
+                  icon: Icon(Icons.notes), label: 'All Notes'),
+              BottomNavigationBarItem(
+                  icon: Icon(Icons.push_pin), label: 'Pinned Notes'),
+              BottomNavigationBarItem(
+                  icon: Icon(Icons.lock), label: 'Private Notes'),
             ],
           ),
         ],
       ),
     );
-  }
-
-  Iterable<CloudNote> _filterNotesByIndex(Iterable<CloudNote> allNotes) {
-    switch (_currentIndex) {
-      case 1:
-        return allNotes.where((n) => n.pinned && !n.isPrivate);
-      case 2:
-        return allNotes.where((n) => n.isPrivate);
-      default:
-        return allNotes.where((n) => !n.pinned && !n.isPrivate);
-    }
   }
 
   List<CloudNote> _sortAndPin(Iterable<CloudNote> notes) {
