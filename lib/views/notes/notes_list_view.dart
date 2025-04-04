@@ -209,9 +209,11 @@ class NotesListView extends StatelessWidget {
                               ),
                             );
                           },
-                           onSetPassword: (docId, text, isPrivate) => showSetPasswordDialog(context, privateManager),
-                          onVerifyPassword: (title) => showVerifyPasswordDialog(context, privateManager, title: title),
-                          onRecoverPassword: privateManager.recoverPassword,
+                          onSetPassword: (docId, text, isPrivate) => showSetPasswordDialog(context, privateManager),
+                          onVerifyPassword: (title) => note.isPrivate && currentIndex == 2
+                              ? showUnlockNoteDialog(context, privateManager)
+                              : showLockNoteDialog(context, privateManager, note.isPrivate),
+                          onRecoverPassword: (context) => privateManager.recoverPassword(context),
                         );
 
                         if (!successs && context.mounted) {

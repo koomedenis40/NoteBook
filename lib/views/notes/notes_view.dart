@@ -208,22 +208,17 @@ class _NotesViewState extends State<NotesView> {
             unselectedItemColor: Colors.black,
             selectedItemColor: Colors.white,
             onTap: (newIndex) async {
-// In NotesView’s BottomNavigationBar onTap:
-              if (newIndex == 2) {
+ if (newIndex == 2) {
                 final hasPass = await _privateManager.hasPassword();
-                debugPrint(
-                    'Switching to Private Notes, has password: $hasPass, authenticated: $_isPrivateAuthenticated');
+                debugPrint('Switching to Private Notes, has password: $hasPass, authenticated: $_isPrivateAuthenticated');
 
                 if (_currentIndex == 2 && _isPrivateAuthenticated) {
-                  debugPrint(
-                      'Already in Private Notes and authenticated, skipping prompt');
+                  debugPrint('Already in Private Notes and authenticated, skipping prompt');
                   return;
                 }
 
                 if (hasPass && !_isPrivateAuthenticated) {
-                  final isValid = await showVerifyPasswordDialog(
-                      context, _privateManager,
-                      title: 'Unlock Private Notes');
+                  final isValid = await showPrivateNotesPasswordDialog(context, _privateManager);
                   if (!isValid && mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Incorrect password')),
@@ -233,8 +228,7 @@ class _NotesViewState extends State<NotesView> {
                     _isPrivateAuthenticated = true;
                   }
                 } else if (!hasPass) {
-                  final success =
-                      await showSetPasswordDialog(context, _privateManager);
+                  final success = await showSetPasswordDialog(context, _privateManager);
                   if (!success && mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Password not set')),

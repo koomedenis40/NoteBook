@@ -7,6 +7,7 @@ import 'package:mynotes/services/cloud/firebase_cloud_storage.dart';
 import 'package:mynotes/utilities/dialogs/cannot_share_empty_note_dialog.dart';
 import 'package:mynotes/utilities/dialogs/delete_dialog.dart';
 import 'package:mynotes/utilities/generics/get_arguments.dart';
+import 'package:mynotes/utilities/generics/list_formatting_utils.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:open_filex/open_filex.dart';
@@ -40,6 +41,14 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
     _titleController = TextEditingController();
     _titleFocusNode = FocusNode();
     _textFocusNode = FocusNode();
+    // Focus immediately on the text field if it's empty
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_textController.text.isEmpty) {
+        FocusScope.of(context).requestFocus(
+            _textFocusNode); // Make sure the focus is correctly set
+      }
+    });
+
     _textController.addListener(_handleTextChanged);
     _titleController.addListener(_handleTextChanged);
   }
@@ -178,20 +187,21 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
     Share.share(shareContent);
   }
 
-@override
+  @override
   Widget build(BuildContext context) {
     return FutureBuilder(
       future: _loadNoteIfEditing(context),
       builder: (context, snapshot) {
         return Scaffold(
-          resizeToAvoidBottomInset: false, // Manual control for keyboard
+          resizeToAvoidBottomInset: false,
           backgroundColor: Colors.white,
           body: Stack(
             children: [
               // Scrollable content (header, text area, attachments)
               SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.only(bottom: 60.0), // Space for footer
+                padding:
+                    const EdgeInsets.only(bottom: 60.0), // Space for footer
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -207,7 +217,8 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
                             children: [
                               const Text(
                                 'My Note',
-                                style: TextStyle(fontSize: 28, color: Colors.black),
+                                style: TextStyle(
+                                    fontSize: 28, color: Colors.black),
                               ),
                               Expanded(child: Container()),
                               if (_existingNote != null)
@@ -215,9 +226,12 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
                                   children: [
                                     InkWell(
                                       onTap: () async {
-                                        final shouldDelete = await showDeleteDialog(context);
+                                        final shouldDelete =
+                                            await showDeleteDialog(context);
                                         if (shouldDelete) {
-                                          await _notesService.deleteNote(documentId: _existingNote!.documentId);
+                                          await _notesService.deleteNote(
+                                              documentId:
+                                                  _existingNote!.documentId);
                                           if (mounted) {
                                             Navigator.pop(context);
                                           }
@@ -268,9 +282,11 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
                             maxLines: null,
                             textInputAction: TextInputAction.next,
                             onSubmitted: (value) {
-                              FocusScope.of(context).requestFocus(_textFocusNode);
+                              FocusScope.of(context)
+                                  .requestFocus(_textFocusNode);
                             },
-                            style: const TextStyle(fontSize: 26, color: Colors.black),
+                            style: const TextStyle(
+                                fontSize: 26, color: Colors.black),
                             decoration: InputDecoration(
                               hintText: 'Title',
                               hintStyle: const TextStyle(color: Colors.black54),
@@ -290,28 +306,49 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
                         children: [
                           _textController.text.isEmpty
                               ? Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 16, vertical: 16),
                                   child: TextField(
                                     controller: _textController,
                                     focusNode: _textFocusNode,
-                                    onChanged: (value) => setState(() {}),
+                                    onChanged: (value) {
+                                      final previousSelection =
+                                          _textController.selection;
+                                      setState(() {});
+                                      ListFormattingUtils.handleListFormatting(
+                                          value,
+                                          _textController,
+                                          previousSelection);
+                                    },
                                     keyboardType: TextInputType.multiline,
                                     maxLines: null,
-                                    style: const TextStyle(fontSize: 14, color: Colors.black54),
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.black54,
+                                      height: 1.5,
+                                    ),
                                     decoration: InputDecoration(
-                                      hintText: context.loc.start_typing_your_note,
-                                      hintStyle: const TextStyle(color: Colors.black54),
+                                      hintText:
+                                          context.loc.start_typing_your_note,
+                                      hintStyle: const TextStyle(
+                                          color: Colors.black54),
                                       border: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(8),
-                                        borderSide: const BorderSide(color: Colors.transparent, width: 1),
+                                        borderSide: const BorderSide(
+                                            color: Colors.transparent,
+                                            width: 1),
                                       ),
                                       enabledBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(8),
-                                        borderSide: const BorderSide(color: Colors.transparent, width: 1),
+                                        borderSide: const BorderSide(
+                                            color: Colors.transparent,
+                                            width: 1),
                                       ),
                                       focusedBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(8),
-                                        borderSide: const BorderSide(color: Colors.transparent, width: 1),
+                                        borderSide: const BorderSide(
+                                            color: Colors.transparent,
+                                            width: 1),
                                       ),
                                     ),
                                   ),
@@ -319,7 +356,8 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
                               : SingleChildScrollView(
                                   physics: const BouncingScrollPhysics(),
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 16, vertical: 16),
                                     child: Scrollbar(
                                       thumbVisibility: true,
                                       thickness: 4,
@@ -327,24 +365,48 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
                                       child: TextField(
                                         controller: _textController,
                                         focusNode: _textFocusNode,
-                                        onChanged: (value) => setState(() {}),
+                                        onChanged: (value) {
+                                          final previousSelection =
+                                              _textController.selection;
+                                          setState(() {});
+                                          ListFormattingUtils
+                                              .handleListFormatting(
+                                                  value,
+                                                  _textController,
+                                                  previousSelection);
+                                        },
                                         keyboardType: TextInputType.multiline,
                                         maxLines: null,
-                                        style: const TextStyle(fontSize: 14, color: Colors.black54),
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.black54,
+                                          height: 1.5,
+                                        ),
                                         decoration: InputDecoration(
-                                          hintText: context.loc.start_typing_your_note,
-                                          hintStyle: const TextStyle(color: Colors.black54),
+                                          hintText: context
+                                              .loc.start_typing_your_note,
+                                          hintStyle: const TextStyle(
+                                              color: Colors.black54),
                                           border: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(8),
-                                            borderSide: const BorderSide(color: Colors.transparent, width: 1),
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                            borderSide: const BorderSide(
+                                                color: Colors.transparent,
+                                                width: 1),
                                           ),
                                           enabledBorder: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(8),
-                                            borderSide: const BorderSide(color: Colors.transparent, width: 1),
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                            borderSide: const BorderSide(
+                                                color: Colors.transparent,
+                                                width: 1),
                                           ),
                                           focusedBorder: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(8),
-                                            borderSide: const BorderSide(color: Colors.transparent, width: 1),
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                            borderSide: const BorderSide(
+                                                color: Colors.transparent,
+                                                width: 1),
                                           ),
                                         ),
                                       ),
@@ -364,7 +426,8 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
                                     _existingNote != null
                                         ? 'Last edited: ${_existingNote!.updatedAt.toString().substring(0, 16)}'
                                         : 'Created: ${DateTime.now().toString().substring(0, 16)}',
-                                    style: const TextStyle(color: Colors.black12, fontSize: 14),
+                                    style: const TextStyle(
+                                        color: Colors.black12, fontSize: 14),
                                   ),
                                   Expanded(child: Container()),
                                 ],
@@ -397,7 +460,8 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
                                         color: Color.fromRGBO(31, 41, 55, 1),
                                       ),
                                     ),
-                                    backgroundColor: accentColor.withOpacity(0.8),
+                                    backgroundColor:
+                                        accentColor.withOpacity(0.8),
                                     elevation: 1,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12),
@@ -416,10 +480,12 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
               Positioned(
                 left: 0,
                 right: 0,
-                bottom: MediaQuery.of(context).viewInsets.bottom - 20.0, // Moves up by keyboard height
+                bottom: MediaQuery.of(context).viewInsets.bottom -
+                    20.0, // Moves up by keyboard height
                 child: Container(
                   color: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0, vertical: 16.0),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -459,4 +525,3 @@ class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
     );
   }
 }
-
