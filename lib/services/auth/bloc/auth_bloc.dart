@@ -183,20 +183,20 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
         if (user != null) {
           // Convert Firebase User to AuthUser (your custom class)
-          print("✅ Firebase Authentication Successful: ${user.email}");
+        
           final authUser = AuthUser.fromFirebase(user);
 
           // Emit the logged-in state
           emit(AuthStateLoggedIn(user: authUser, isLoading: false));
         } else {
-          print("❌ Authentication failed: User is null.");
+          
           emit(AuthStateLoggedOut(
             exception: GenericAuthException(),
             isLoading: false,
           ));
         }
       } catch (e) {
-        print("❌ ERROR: Google Sign-In failed: $e");
+        
         emit(AuthStateLoggedOut(
           exception: GenericAuthException(),
           isLoading: false,

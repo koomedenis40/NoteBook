@@ -24,10 +24,6 @@ Future<bool> showSetPasswordDialog(BuildContext context, PrivateNotesManager pri
                 obscureText: true,
                 decoration: const InputDecoration(labelText: 'Confirm Password'),
               ),
-              TextField(
-                controller: emailController,
-                decoration: const InputDecoration(labelText: 'Recovery Email'),
-              ),
             ],
           ),
           actionsPadding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
@@ -46,7 +42,6 @@ Future<bool> showSetPasswordDialog(BuildContext context, PrivateNotesManager pri
                       confirmController.text,
                       emailController.text,
                     );
-                    debugPrint('Set password dialog result: $success');
                     Navigator.of(context).pop(success);
                   },
                   child: const Text('Set'),
