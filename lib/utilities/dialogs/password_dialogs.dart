@@ -6,52 +6,67 @@ Future<bool> showSetPasswordDialog(BuildContext context, PrivateNotesManager pri
   final confirmController = TextEditingController();
   final emailController = TextEditingController();
 
-  return await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Set Private Notes Password'),
-          contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: passwordController,
-                obscureText: true,
-                decoration: const InputDecoration(labelText: 'Password'),
-              ),
-              TextField(
-                controller: confirmController,
-                obscureText: true,
-                decoration: const InputDecoration(labelText: 'Confirm Password'),
-              ),
-            ],
+return await showDialog<bool>(
+  context: context,
+  builder: (context) => AlertDialog(
+    title: const Text('Set Private Notes Password'),
+    contentPadding: const EdgeInsets.fromLTRB(18, 8, 18, 0), // Reduced top padding from 18 to 8
+    content: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 8), // Slight indent for Password
+          child: TextField(
+            controller: passwordController,
+            obscureText: true,
+            decoration: const InputDecoration(labelText: 'Password'),
           ),
-          actionsPadding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-          actions: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('Cancel'),
-                ),
-                TextButton(
-                  onPressed: () async {
-                    final success = await privateManager.setPassword(
-                      passwordController.text,
-                      confirmController.text,
-                      emailController.text,
-                    );
-                    Navigator.of(context).pop(success);
-                  },
-                  child: const Text('Set'),
-                ),
-              ],
-            ),
-          ],
         ),
-      ) ??
-      false;
+        Padding(
+          padding: const EdgeInsets.only(left: 8), // Slight indent for Confirm Password
+          child: TextField(
+            controller: confirmController,
+            obscureText: true,
+            decoration: const InputDecoration(labelText: 'Confirm Password'),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(left: 8), // Slight indent for Confirm Password
+          child: TextField(
+            controller: emailController,
+            obscureText: false,
+            decoration: const InputDecoration(labelText: 'Email to Send Reset Link'),
+          ),
+        ),
+        const SizedBox(height: 16), // Kept vertical gap between TextField and buttons
+      ],
+    ),
+    actionsPadding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+    actions: [
+      Row(
+        mainAxisAlignment: MainAxisAlignment.end, // Aligns buttons to the right
+        children: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          const SizedBox(width: 4), // Controlled horizontal gap between Cancel and Set
+          TextButton(
+            onPressed: () async {
+              final success = await privateManager.setPassword(
+                passwordController.text,
+                confirmController.text,
+                emailController.text,
+              );
+              Navigator.of(context).pop(success);
+            },
+            child: const Text('Set'),
+          ),
+        ],
+      ),
+    ],
+  ),
+) ?? false;
 }
 
 Future<bool> showLockNoteDialog(BuildContext context, PrivateNotesManager privateManager, bool isPrivate) async {
