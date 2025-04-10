@@ -1,0 +1,2 @@
+C:/Users/User/FlutterP/mynotes/android/app/.cxx/RelWithDebInfo/a6e3u252/arm64-v8a/CMakeFiles/edit_cache.dir
+C:/Users/User/FlutterP/mynotes/android/app/.cxx/RelWithDebInfo/a6e3u252/arm64-v8a/CMakeFiles/rebuild_cache.dir

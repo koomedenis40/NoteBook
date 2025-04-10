@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart'; // Add this import
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mynotes/constants/routes.dart'; 
 import 'package:mynotes/services/auth/auth_service.dart';
-import 'package:mynotes/services/auth/bloc/auth_bloc.dart'; // Add this import
-import 'package:mynotes/services/auth/bloc/auth_event.dart'; // Add this import
+import 'package:mynotes/services/auth/bloc/auth_bloc.dart';
+import 'package:mynotes/services/auth/bloc/auth_event.dart';
 import 'package:mynotes/services/cloud/cloud_note.dart';
 import 'package:mynotes/services/cloud/firebase_cloud_storage.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -64,14 +65,15 @@ class PrivateNotesManager {
     }
   }
 
-  Future<String> recoverPassword(BuildContext context) async { // Add context parameter
+  Future<String> recoverPassword() async { // Remove BuildContext parameter
     try {
       debugPrint('recoverPassword called');
       final email = await _storage.read(key: _recoveryEmailKey) ?? AuthService.firebase().currentUser!.email;
       await AuthService.firebase().sendPasswordReset(toEmail: email);
       await _clearPassword();
-      if (context.mounted) {
-        context.read<AuthBloc>().add(const AuthEventLogOut()); // Trigger logout via bloc
+      final context = navigatorKey.currentContext; // Use navigatorKey
+      if (context != null && context.mounted) {
+        context.read<AuthBloc>().add(const AuthEventLogOut());
       }
       debugPrint('Password reset email sent to: $email and logout event dispatched');
       return 'A password reset link has been sent to $email. Please reset your password and log back in.';
@@ -97,7 +99,7 @@ class PrivateNotesManager {
     required VoidCallback onSuccess,
     required Future<bool> Function(String, String, String) onSetPassword,
     required Future<bool> Function(String) onVerifyPassword,
-    required Future<String> Function(BuildContext) onRecoverPassword, // Update signature
+    required Future<String> Function() onRecoverPassword, // Update signature
   }) async {
     debugPrint('togglePrivacy called for note: ${note.documentId}, isPrivate: ${note.isPrivate}');
     final hasPass = await hasPassword();

@@ -13,6 +13,7 @@ class NotesListView extends StatelessWidget {
   final NoteCallback onTogglePin;
   final bool isGridView;
   final int currentIndex;
+  final bool isInteracting; // New prop to disable gestures during tab switch
 
   const NotesListView({
     super.key,
@@ -22,15 +23,15 @@ class NotesListView extends StatelessWidget {
     required this.onTogglePin,
     required this.isGridView,
     required this.currentIndex,
+    this.isInteracting = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    if (isGridView) {
-      return _buildGrid();
-    } else {
-      return _buildList();
-    }
+    return AbsorbPointer(
+      absorbing: isInteracting, // Disable gestures while tab switching
+      child: isGridView ? _buildGrid() : _buildList(),
+    );
   }
 
   Widget _buildGrid() {
@@ -130,9 +131,7 @@ class NotesListView extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          color: isList
-              ? Colors.white70
-              : Colors.white, // Subtle difference for list
+          color: isList ? Colors.white70 : Colors.white,
           elevation: 3,
           clipBehavior: Clip.antiAlias,
           child: Padding(
@@ -159,8 +158,7 @@ class NotesListView extends StatelessWidget {
                       fontSize: 14,
                     ),
                     overflow: TextOverflow.fade,
-                    maxLines:
-                        isList ? 4 : 8, // Fewer lines in list for distinction
+                    maxLines: isList ? 4 : 8,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -180,7 +178,10 @@ class NotesListView extends StatelessWidget {
                           ? Icons.push_pin
                           : Icons.push_pin_outlined,
                       color: note.pinned ? Colors.yellow : Colors.blue,
-                      onPressed: () => onTogglePin(note),
+                      onPressed: () async {
+                        onTogglePin(note);
+                        await Future.delayed(const Duration(milliseconds: 200));
+                      },
                     ),
                     _buildIcon(
                       icon: Icons.delete,
@@ -190,6 +191,7 @@ class NotesListView extends StatelessWidget {
                         if (shouldDelete) {
                           onDeleteNote(note);
                         }
+                        await Future.delayed(const Duration(milliseconds: 200));
                       },
                     ),
                     _buildIcon(
@@ -197,10 +199,9 @@ class NotesListView extends StatelessWidget {
                           note.isPrivate ? Icons.lock_open : Icons.lock_outline,
                       color: Colors.blue,
                       onPressed: () async {
-                        final successs = await privateManager.togglePrivacy(
+                        final success = await privateManager.togglePrivacy(
                           note: note,
                           onSuccess: () {
-                            // Refresh UI
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(note.isPrivate
@@ -209,20 +210,23 @@ class NotesListView extends StatelessWidget {
                               ),
                             );
                           },
-                          onSetPassword: (docId, text, isPrivate) => showSetPasswordDialog(context, privateManager),
-                          onVerifyPassword: (title) => note.isPrivate && currentIndex == 2
+                          onSetPassword: (docId, text, isPrivate) =>
+                              showSetPasswordDialog(context, privateManager),
+                          onVerifyPassword: (title) => note.isPrivate &&
+                                  currentIndex == 2
                               ? showUnlockNoteDialog(context, privateManager)
-                              : showLockNoteDialog(context, privateManager, note.isPrivate),
-                          onRecoverPassword: (context) => privateManager.recoverPassword(context),
+                              : showLockNoteDialog(
+                                  context, privateManager, note.isPrivate),
+                          onRecoverPassword: () =>
+                              privateManager.recoverPassword(), // Updated
                         );
 
-                        if (!successs && context.mounted) {
+                        if (!success && context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Action Failed'),
-                            ),
+                            const SnackBar(content: Text('Action Failed')),
                           );
                         }
+                        await Future.delayed(const Duration(milliseconds: 300));
                       },
                     ),
                   ],

@@ -31,6 +31,7 @@ class _NotesViewState extends State<NotesView> {
   late SortCriterion _sortCriterion;
   bool _isGridView = true; // Grid view by default
   int _currentIndex = 0; // Bottom navigation index
+  bool _isSwitchingTab = false; // Debounce flag
 
   final PrivateNotesManager _privateManager = PrivateNotesManager();
   bool _isPrivateAuthenticated = false;
@@ -198,7 +199,7 @@ class _NotesViewState extends State<NotesView> {
           ],
         ),
       ),
-      bottomNavigationBar: Column(
+            bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(height: 1, color: Colors.white10),
@@ -207,54 +208,69 @@ class _NotesViewState extends State<NotesView> {
             backgroundColor: Colors.grey.shade300,
             unselectedItemColor: Colors.black,
             selectedItemColor: Colors.white,
-            onTap: (newIndex) async {
- if (newIndex == 2) {
-                final hasPass = await _privateManager.hasPassword();
-                debugPrint('Switching to Private Notes, has password: $hasPass, authenticated: $_isPrivateAuthenticated');
+            onTap: _isSwitchingTab
+                ? null // Disable taps while switching
+                : (newIndex) async {
+                    if (_isSwitchingTab) return; // Debounce
+                    setState(() {
+                      _isSwitchingTab = true; // Lock further taps
+                    });
 
-                if (_currentIndex == 2 && _isPrivateAuthenticated) {
-                  debugPrint('Already in Private Notes and authenticated, skipping prompt');
-                  return;
-                }
+                    try {
+                      if (newIndex == 2) {
+                        final hasPass = await _privateManager.hasPassword();
+                        debugPrint(
+                            'Switching to Private Notes, has password: $hasPass, authenticated: $_isPrivateAuthenticated');
 
-                if (hasPass && !_isPrivateAuthenticated) {
-                  final isValid = await showPrivateNotesPasswordDialog(context, _privateManager);
-                  if (!isValid && mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Incorrect password')),
-                    );
-                    return;
-                  } else {
-                    _isPrivateAuthenticated = true;
-                  }
-                } else if (!hasPass) {
-                  final success = await showSetPasswordDialog(context, _privateManager);
-                  if (!success && mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Password not set')),
-                    );
-                    return;
-                  } else {
-                    _isPrivateAuthenticated = true;
-                  }
-                }
-              } else {
-                if (_currentIndex == 2) {
-                  _isPrivateAuthenticated = false;
-                  debugPrint('Leaving Private Notes, reset authentication');
-                }
-              }
-              setState(() {
-                _currentIndex = newIndex;
-              });
-            },
+                        if (_currentIndex == 2 && _isPrivateAuthenticated) {
+                          debugPrint(
+                              'Already in Private Notes and authenticated, skipping prompt');
+                          return;
+                        }
+
+                        if (hasPass && !_isPrivateAuthenticated) {
+                          final isValid = await showPrivateNotesPasswordDialog(
+                              context, _privateManager);
+                          if (!isValid && mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Incorrect password')),
+                            );
+                            return;
+                          } else {
+                            _isPrivateAuthenticated = true;
+                          }
+                        } else if (!hasPass) {
+                          final success = await showSetPasswordDialog(
+                              context, _privateManager);
+                          if (!success && mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Password not set')),
+                            );
+                            return;
+                          } else {
+                            _isPrivateAuthenticated = true;
+                          }
+                        }
+                      } else {
+                        if (_currentIndex == 2) {
+                          _isPrivateAuthenticated = false;
+                          debugPrint('Leaving Private Notes, reset authentication');
+                        }
+                      }
+                      setState(() {
+                        _currentIndex = newIndex;
+                      });
+                    } finally {
+                      setState(() {
+                        _isSwitchingTab = false; // Unlock taps
+                      });
+                    }
+                  },
             items: const [
-              BottomNavigationBarItem(
-                  icon: Icon(Icons.notes), label: 'All Notes'),
+              BottomNavigationBarItem(icon: Icon(Icons.notes), label: 'All Notes'),
               BottomNavigationBarItem(
                   icon: Icon(Icons.push_pin), label: 'Pinned Notes'),
-              BottomNavigationBarItem(
-                  icon: Icon(Icons.lock), label: 'Private Notes'),
+              BottomNavigationBarItem(icon: Icon(Icons.lock), label: 'Private Notes'),
             ],
           ),
         ],

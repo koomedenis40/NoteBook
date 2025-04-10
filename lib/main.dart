@@ -16,25 +16,28 @@ import 'package:mynotes/views/verify_email_view.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 
+final navigatorKey = GlobalKey<NavigatorState>();
+
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(
-    MaterialApp(
-      supportedLocales: AppLocalizations.supportedLocales,
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      title: 'Flutter Demo',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        fontFamily: 'Urbanist',
-        scaffoldBackgroundColor: AppColors.background
+    BlocProvider<AuthBloc>( // Move BlocProvider here
+      create: (context) => AuthBloc(FirebaseAuthProvider()),
+      child: MaterialApp(
+        navigatorKey: navigatorKey, // Add navigatorKey here
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        title: 'Flutter Demo',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          fontFamily: 'Urbanist',
+          scaffoldBackgroundColor: AppColors.background,
+        ),
+        home: const HomePage(), // Remove BlocProvider from here
+        routes: {
+          createOrUpdateNoteRoute: (context) => const CreateUpdateNoteView(),
+        },
       ),
-      home: BlocProvider<AuthBloc>(
-        create: (context) => AuthBloc(FirebaseAuthProvider()),
-        child: const HomePage(),
-      ),
-      routes: {
-        createOrUpdateNoteRoute: (context) => const CreateUpdateNoteView(),
-      },
     ),
   );
 }
